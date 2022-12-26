@@ -43,8 +43,6 @@ public class XmlOuterDb
 		xdoc.Save(xw);
 	}
 
-	
-
 	/// <summary>
 	/// Loads the encrypted xml document
 	/// </summary>

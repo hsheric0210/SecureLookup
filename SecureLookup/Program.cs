@@ -5,12 +5,11 @@ using System.Xml;
 namespace SecureLookup;
 public class Program
 {
-	private readonly string password;
 	private bool loop;
 	private readonly CommandFactory cmdFactory;
 
 	public string DbFile { get; set; }
-	public XmlOuterDb Outer { get; }
+	public XmlOuterDb Outer { get; private set; }
 	public XmlInnerRootEntry Db { get; }
 
 	public static void Main(params string[] args)
@@ -47,7 +46,6 @@ public class Program
 	public Program(string dbFile, string password, bool loop)
 	{
 		DbFile = dbFile;
-		this.password = password;
 		try
 		{
 			Outer = new XmlOuterDb(dbFile, Encoding.UTF8.GetBytes(password));
@@ -59,7 +57,7 @@ public class Program
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine("Failed to load the database file.");
+			Console.WriteLine("Failed to load the database file. Mayby mismatched key?");
 			Console.WriteLine(ex);
 			Environment.Exit(ex.HResult);
 		}
@@ -68,10 +66,14 @@ public class Program
 		cmdFactory = new CommandFactory(this);
 	}
 
-	private void Start()
+	public void ChangePassword(string newPassword)
 	{
-		MainLoop();
+		var newOuter = new XmlOuterDb(DbFile, Encoding.UTF8.GetBytes(newPassword));
+		newOuter.Save(Db);
+		Outer = newOuter;
 	}
+
+	private void Start() => MainLoop();
 
 	public void SaveDb()
 	{
@@ -104,9 +106,7 @@ public class Program
 			Console.Write(DbFile + ">");
 			var linePieces = Console.ReadLine()?.SplitOutsideQuotes(' ');
 			if (linePieces is not null && linePieces.Length > 0)
-			{
 				Execute(linePieces[0], linePieces.Skip(1).ToArray());
-			}
 		}
 	}
 }

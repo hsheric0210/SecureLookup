@@ -16,7 +16,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 	-target<(a)ll/(n)ame/(i)d/o(r)iginalFileName/(e)ncryptedFileName/(u)rls/n(o)tes>		- Search targets (alias: '-t')
 	-keyword<keyword/regex>						- Keyword to search / Regex (alias: '-kw', '-k'){MandatoryParameters}
   Optional parameter:
-	[-cs]		- Case sensitive search (Search is case insensitive by default){OptionalParameters}";
+	[-cs]		- Case sensitive search (Search is case insensitive by default, even regex){OptionalParameters}";
 
 	protected override bool Execute(string[] args)
 	{

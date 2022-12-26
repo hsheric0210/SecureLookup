@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace SecureLookup.Commands;
 internal class ChangePasswordCommand : AbstractCommand
@@ -18,7 +19,12 @@ internal class ChangePasswordCommand : AbstractCommand
 		if (string.IsNullOrWhiteSpace(pass))
 			return false;
 
-
+		if (Regex.IsMatch(pass, "[^\\w!#$%&'()*+,-./:;<=>?@\\[\\]^`{|}~]"))
+		{
+			Console.WriteLine("Password contains unsupported characters.");
+			Console.WriteLine("Allowed characters: A-Z a-z 0-9 !#$%&'()*+,-./:;<=>?@[]^`{|}~");
+		}
+		Instance.ChangePassword(pass);
 		return true;
 	}
 }

@@ -20,6 +20,7 @@ public class CommandFactory
 		cmdList.Add(new FindCommand(instance));
 		cmdList.Add(new SaveCommand(instance));
 		cmdList.Add(new DropCommand(instance));
+		cmdList.Add(new ChangePasswordCommand(instance));
 		// TODO: Export(Dump), Password, etc.
 	}
 
