@@ -16,7 +16,7 @@ public abstract class AbstractCommand
 
 	public void TryExecute(string[] args)
 	{
-		if (args.Length < MandatoryParameterCount || !Execute(args))
+		if (!Execute(args))
 			Console.WriteLine($"Usage: {Name} {Usage}");
 	}
 

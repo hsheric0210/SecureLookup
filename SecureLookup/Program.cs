@@ -1,4 +1,5 @@
 ﻿using SecureLookup.Commands;
+using System.Text;
 using System.Xml;
 
 namespace SecureLookup;
@@ -9,7 +10,8 @@ public class Program
 	private readonly CommandFactory cmdFactory;
 
 	public string DbFile { get; set; }
-	public XmlDocument Db { get; }
+	public XmlOuterDb Outer { get; }
+	public XmlInnerRootEntry Db { get; }
 
 	public static void Main(params string[] args)
 	{
@@ -31,7 +33,7 @@ public class Program
 		if (command is not null)
 		{
 			// command by parameter is separated by '+' character
-			var pieces = command.Split('+');
+			var pieces = command.SplitOutsideQuotes(' ');
 			instance.Execute(pieces[0], pieces.Skip(1).ToArray());
 		}
 	}
@@ -42,15 +44,12 @@ public class Program
 		this.password = password;
 		try
 		{
+			Outer = new XmlOuterDb(dbFile, Encoding.UTF8.GetBytes(password));
+			Db = new XmlInnerRootEntry();
 			if (new FileInfo(dbFile).Exists)
-			{
-				Db = XmlEncryptor.Load(dbFile, password);
-			}
+				Db = Outer.Load();
 			else
-			{
-				Db = CreateDb();
 				SaveDb();
-			}
 		}
 		catch (Exception ex)
 		{
@@ -63,20 +62,12 @@ public class Program
 		cmdFactory = new CommandFactory(this);
 	}
 
-	public XmlDocument CreateDb()
-	{
-		var doc = new XmlDocument();
-		doc.InsertBefore(doc.CreateXmlDeclaration("1.0", "utf-8", null), doc.DocumentElement);
-		doc.AppendChild(doc.CreateElement("root"));
-		return doc;
-	}
-
 	private void Start()
 	{
 		MainLoop();
 	}
 
-	public void SaveDb() => XmlEncryptor.Save(Db, DbFile, password);
+	public void SaveDb() => Outer.Save(Db);
 
 	public void Exit() => loop = false;
 
@@ -93,7 +84,7 @@ public class Program
 	{
 		while (loop)
 		{
-			var linePieces = Console.ReadLine()?.Split(' ');
+			var linePieces = Console.ReadLine()?.SplitOutsideQuotes(' ');
 			if (linePieces is not null && linePieces.Length > 0)
 			{
 				Execute(linePieces[0], linePieces.Skip(1).ToArray());
