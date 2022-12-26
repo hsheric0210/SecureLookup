@@ -20,7 +20,13 @@ public class Program
 		var command = args.GetSwitches("command", "cmd", "c");
 		if (dbFile is null || pass is null)
 		{
-			Console.WriteLine("Usage: <executable> -db<Database> -pw<Password> [-cmd<Command>]");
+			Console.WriteLine(@"Available parameters:
+  Mandatory parameters:
+	-db<Database>		- Database file
+	-pw<Password>		- Database unlock password
+  Optional parameters:
+	[-cmd<Command>]		- Command to run immediately after database open
+	[-nl]			- Disable the main loop; exit immediately after executing the command specified with '-cmd' switch");
 			return;
 		}
 
@@ -53,7 +59,7 @@ public class Program
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine("Exception occurred while loading the database file.");
+			Console.WriteLine("Failed to load the database file.");
 			Console.WriteLine(ex);
 			Environment.Exit(ex.HResult);
 		}
@@ -67,7 +73,18 @@ public class Program
 		MainLoop();
 	}
 
-	public void SaveDb() => Outer.Save(Db);
+	public void SaveDb()
+	{
+		try
+		{
+			Outer.Save(Db);
+		}
+		catch(Exception ex)
+		{
+			Console.WriteLine("Failed to save the database file.");
+			Console.WriteLine(ex);
+		}
+	}
 
 	public void Exit() => loop = false;
 
@@ -84,6 +101,7 @@ public class Program
 	{
 		while (loop)
 		{
+			Console.Write(DbFile + ">");
 			var linePieces = Console.ReadLine()?.SplitOutsideQuotes(' ');
 			if (linePieces is not null && linePieces.Length > 0)
 			{

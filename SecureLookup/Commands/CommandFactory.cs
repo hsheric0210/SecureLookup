@@ -15,12 +15,11 @@ public class CommandFactory
 	private void RegisterDefaultCommands(IList<AbstractCommand> cmdList)
 	{
 		cmdList.Add(new AddCommand(instance));
-		cmdList.Add(new BatchAddCommand(instance));
+		cmdList.Add(new ImportCommand(instance));
 		cmdList.Add(new ExitCommand(instance));
-		cmdList.Add(new FileNameCommand(instance));
-		cmdList.Add(new FileNameCommand(instance));
 		cmdList.Add(new FindCommand(instance));
 		cmdList.Add(new SaveCommand(instance));
+		cmdList.Add(new DropCommand(instance));
 		// TODO: Export(Dump), Password, etc.
 	}
 

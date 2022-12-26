@@ -5,9 +5,7 @@ internal class ExitCommand : AbstractCommand
 	{
 	}
 
-	protected override string Usage => "";
-
-	protected override int MandatoryParameterCount => 0;
+	protected override string ParameterExplain => "";
 
 	protected override bool Execute(string[] args)
 	{

@@ -1,5 +1,4 @@
-﻿using Konscious.Security.Cryptography;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -21,13 +20,6 @@ internal class Encryption
 
 	public string Encrypt(XmlInnerRootEntry root)
 	{
-		// TEST
-		using var _stringwr = new StringWriter();
-		var _ser = new XmlSerializer(typeof(XmlInnerRootEntry));
-		_ser.Serialize(_stringwr, root);
-		Console.WriteLine("Serialization result: " + _stringwr.GetStringBuilder().ToString());
-		// TEST
-
 		using var ms = new MemoryStream();
 		using (Aes cipher = CreateCipher())
 		{
@@ -45,8 +37,6 @@ internal class Encryption
 
 	public XmlInnerRootEntry Decrypt(string encrypted)
 	{
-		testdecrypt(encrypted);
-
 		using var ms = new MemoryStream(Convert.FromBase64String(encrypted));
 		using Aes cipher = CreateCipher();
 		using var cs = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read);
@@ -56,15 +46,6 @@ internal class Encryption
 		if (obj is not XmlInnerRootEntry root)
 			throw new InvalidOperationException("Deserialization result is not XmlInnerRoot.");
 		return root;
-	}
-
-	private void testdecrypt(string enc)
-	{
-		using var ms = new MemoryStream(Convert.FromBase64String(enc));
-		using Aes cipher = CreateCipher();
-		using var cs = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read);
-		using var sr = new StreamReader(cs);
-		Console.WriteLine("decrypted: " + sr.ReadToEnd());
 	}
 
 	private Aes CreateCipher()

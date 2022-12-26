@@ -5,8 +5,7 @@ public abstract class AbstractCommand
 
 	internal string Name { get; }
 
-	protected abstract string Usage { get; }
-	protected abstract int MandatoryParameterCount { get; }
+	protected abstract string ParameterExplain { get; }
 
 	protected AbstractCommand(Program instance, string name)
 	{
@@ -17,7 +16,7 @@ public abstract class AbstractCommand
 	public void TryExecute(string[] args)
 	{
 		if (!Execute(args))
-			Console.WriteLine($"Usage: {Name} {Usage}");
+			Console.WriteLine($"Available parameters for command '{Name}': {ParameterExplain}");
 	}
 
 	protected abstract bool Execute(string[] args);

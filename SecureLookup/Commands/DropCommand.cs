@@ -2,16 +2,16 @@
 using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
-internal class FindCommand : AbstractFilterCommand
+internal class DropCommand : AbstractFilterCommand
 {
-	public FindCommand(Program instance) : base(instance, "find")
+	public DropCommand(Program instance) : base(instance, "drop")
 	{
 	}
 
 	protected override bool ExecuteForEntries(IList<XmlInnerEntry> entries)
 	{
 		var builder = new StringBuilder();
-		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries found.");
+		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries dropped.");
 		foreach (XmlInnerEntry entry in entries)
 		{
 			builder.AppendLine().AppendLine("***");
@@ -34,6 +34,7 @@ internal class FindCommand : AbstractFilterCommand
 					builder.Append("* ").AppendLine(notes);
 			}
 			builder.AppendLine("***");
+			Instance.Db.Entries.Remove(entry);
 		}
 		Console.WriteLine(builder.ToString());
 		return true;
