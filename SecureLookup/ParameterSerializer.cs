@@ -28,7 +28,7 @@ internal static class ParameterSerializer
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine("Failed to convert '" + value + "' to " + propType);
+					Console.WriteLine($"Failed to convert value of parameter ({prop.Name}=)'{value}' to {propType}");
 					Console.WriteLine(ex);
 					return false;
 				}

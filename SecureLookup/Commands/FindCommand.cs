@@ -3,6 +3,8 @@
 namespace SecureLookup.Commands;
 internal class FindCommand : AbstractFilterCommand
 {
+	public override string Description => "Finds the entries matching the filter rules.";
+
 	public FindCommand(Program instance) : base(instance, "find")
 	{
 	}

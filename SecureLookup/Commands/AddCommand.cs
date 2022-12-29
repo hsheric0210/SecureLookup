@@ -3,7 +3,7 @@
 internal class AddCommandParameter
 {
 	[ParameterAlias("n")]
-	[ParameterDescription("Name of the entry; Each entry must have distinct name")]
+	[ParameterDescription("Name of the entry; Entry with same name will be overwritten")]
 	[MandatoryParameter]
 	public string Name { get; set; } = "";
 
@@ -29,7 +29,7 @@ internal class AddCommandParameter
 	[ParameterDescription("Dictionary to generate new file name; Predefined dictionary names are available at README")]
 	public string? NewNameDictionary { get; set; }
 
-	[ParameterDescription("Entry id tag; Each entry must have distinct id")]
+	[ParameterDescription("Entry ID tag; Entry with same ID tag will be overwritten")]
 	public string? Id { get; set; }
 
 	[ParameterDescription("Additional associated URLs separated in ';' char by default; the separator char could be reassigned by '-UrlSeparator' parameter")]
@@ -49,12 +49,13 @@ internal class AddCommandParameter
 
 internal class AddCommand : AbstractCommand
 {
+	public override string Description => "Add a new entry to database.";
+
+	public override string HelpMessage => ParameterSerializer.GetHelpMessage<AddCommandParameter>();
+
 	public AddCommand(Program instance) : base(instance, "add")
 	{
 	}
-
-	protected override string HelpMessage => ParameterSerializer.GetHelpMessage<AddCommandParameter>();
-
 
 	protected override bool Execute(string[] args)
 	{
@@ -111,6 +112,8 @@ internal class AddCommand : AbstractCommand
 			Urls = param.Urls?.Split(urlsep).ToList(),
 			Notes = param.Notes?.Split(notesep).ToList()
 		});
+		Instance.MarkDbDirty();
+
 		Console.WriteLine("Entry added. Don't forget to save the database!");
 
 		if (param.Rename == true)

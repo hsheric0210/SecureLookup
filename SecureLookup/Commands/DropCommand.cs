@@ -11,16 +11,18 @@ internal class DropCommandParameter
 
 internal class DropCommand : AbstractFilterCommand
 {
+	public override string Description => "Removes the entries matching the filter from the database.";
 
+	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<DropCommandParameter>();
 
 	public DropCommand(Program instance) : base(instance, "drop")
 	{
 	}
 
-	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<DropCommandParameter>();
-
 	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
+		Instance.MarkDbDirty();
+
 		var builder = new StringBuilder();
 		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries dropped.");
 		foreach (DbEntry entry in entries)

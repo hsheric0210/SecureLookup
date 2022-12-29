@@ -5,7 +5,9 @@ public abstract class AbstractCommand
 
 	internal string Name { get; }
 
-	protected abstract string HelpMessage { get; }
+	public abstract string Description { get; }
+
+	public abstract string HelpMessage { get; }
 
 	protected AbstractCommand(Program instance, string name)
 	{

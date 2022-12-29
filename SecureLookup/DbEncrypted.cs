@@ -4,19 +4,23 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace SecureLookup;
-public class XmlOuterDb
+public class DbEncrypted
 {
-	public const string OuterRootNodeName = "encrypted";
-	public const string SaltAttributeName = "salt";
-	public const string HashAttributeName = "hash";
-
 	private readonly string fileName;
 	private readonly byte[] password;
-	public XmlOuterDb(string fileName, byte[] password)
+
+	public bool Dirty { get; private set; }
+
+	public DbEncrypted(string fileName, byte[] password)
 	{
 		this.fileName = fileName;
 		this.password = password;
 	}
+
+	/// <summary>
+	/// Mark the database as dirty (modified)
+	/// </summary>
+	public void MarkDirty() => Dirty = true;
 
 	/// <summary>
 	/// Saves the xml document in encrypted form
@@ -49,6 +53,8 @@ public class XmlOuterDb
 			Indent = true
 		});
 		serializer.Serialize(xw, outer);
+
+		Dirty = false;
 	}
 
 	/// <summary>

@@ -5,19 +5,22 @@ internal class ChangePasswordCommandParameter
 {
 	[ParameterAlias("pass", "psw", "pw", "p")]
 	[ParameterDescription($"The new database password; only '${ChangePasswordCommand.AllowedChars}' characters allowed.")]
-	public string Password { get; set; }
+	[MandatoryParameter]
+	public string Password { get; set; } = "";
 }
 
 internal class ChangePasswordCommand : AbstractCommand
 {
 	internal const string AllowedChars = "A-Z a-z 0-9 !#$%&'()*+,-./:;<=>?@[]^`{|}~";
 
-	public ChangePasswordCommand(Program instance) : base(instance, "newdbpass")
+	public override string Description => "Changes the database password.";
+
+	public override string HelpMessage => ParameterSerializer.GetHelpMessage<ChangePasswordCommand>();
+
+
+	public ChangePasswordCommand(Program instance) : base(instance, "changepassword")
 	{
 	}
-
-	protected override string HelpMessage => ParameterSerializer.GetHelpMessage<ChangePasswordCommand>();
-
 
 	protected override bool Execute(string[] args)
 	{

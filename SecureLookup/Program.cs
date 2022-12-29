@@ -28,11 +28,12 @@ public class ProgramParameter
 public class Program
 {
 	private bool loop;
-	private readonly CommandFactory cmdFactory;
+	internal DbEncrypted EncryptedDb { get; private set; }
 
 	public string DbFile { get; set; }
-	public XmlOuterDb Outer { get; private set; }
+	public CommandFactory CommandFactory { get; }
 	public DbInnerRoot Db { get; }
+	public bool DbDirty { get; private set; }
 
 	public static void Main(params string[] args)
 	{
@@ -61,10 +62,10 @@ public class Program
 		DbFile = dbFile;
 		try
 		{
-			Outer = new XmlOuterDb(dbFile, Encoding.UTF8.GetBytes(password));
+			EncryptedDb = new DbEncrypted(dbFile, Encoding.UTF8.GetBytes(password));
 			Db = new DbInnerRoot();
 			if (new FileInfo(dbFile).Exists)
-				Db = Outer.Load();
+				Db = EncryptedDb.Load();
 			else
 				SaveDb();
 		}
@@ -76,14 +77,16 @@ public class Program
 		}
 
 		this.loop = loop;
-		cmdFactory = new CommandFactory(this);
+		CommandFactory = new CommandFactory(this);
 	}
+
+	public void MarkDbDirty() => DbDirty = true;
 
 	public void ChangePassword(string newPassword)
 	{
-		var newOuter = new XmlOuterDb(DbFile, Encoding.UTF8.GetBytes(newPassword));
+		var newOuter = new DbEncrypted(DbFile, Encoding.UTF8.GetBytes(newPassword));
 		newOuter.Save(Db);
-		Outer = newOuter;
+		EncryptedDb = newOuter;
 	}
 
 	private void Start() => MainLoop();
@@ -92,7 +95,7 @@ public class Program
 	{
 		try
 		{
-			Outer.Save(Db);
+			EncryptedDb.Save(Db);
 		}
 		catch (Exception ex)
 		{
@@ -101,11 +104,16 @@ public class Program
 		}
 	}
 
-	public void Exit() => loop = false;
+	public void Exit()
+	{
+		if (EncryptedDb.Dirty)
+			SaveDb();
+		loop = false;
+	}
 
 	private void Execute(string cmdString, string[] args)
 	{
-		AbstractCommand? cmd = cmdFactory.FindCommand(cmdString);
+		AbstractCommand? cmd = CommandFactory.FindCommand(cmdString);
 		if (cmd is not null)
 			cmd.TryExecute(args);
 		else

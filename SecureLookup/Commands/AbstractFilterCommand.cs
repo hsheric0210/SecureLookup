@@ -33,7 +33,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 
 	protected virtual string AdditionalHelpMessage { get; } = "";
 
-	protected override string HelpMessage => ParameterSerializer.GetHelpMessage<FilterCommandParameter>() + Environment.NewLine + AdditionalHelpMessage;
+	public override string HelpMessage => ParameterSerializer.GetHelpMessage<FilterCommandParameter>() + Environment.NewLine + AdditionalHelpMessage;
 
 	protected override bool Execute(string[] args)
 	{
