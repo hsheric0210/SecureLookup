@@ -1,18 +1,29 @@
 ﻿using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
+
+internal class DropCommandParameter
+{
+	[ParameterAlias("dump", "dmp")]
+	[ParameterDescription("Prints the data of dropped entries")]
+	public bool? Print { get; set; }
+}
+
 internal class DropCommand : AbstractFilterCommand
 {
+
+
 	public DropCommand(Program instance) : base(instance, "drop")
 	{
 	}
 
-	protected override bool ExecuteForEntries(IList<XmlInnerEntry> entries)
+	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<DropCommandParameter>();
+
+	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
 		var builder = new StringBuilder();
 		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries dropped.");
-		foreach (XmlInnerEntry entry in entries)
+		foreach (DbEntry entry in entries)
 		{
 			builder.AppendLine().AppendLine("***");
 			builder.Append("Name: ").AppendLine(entry.Name);

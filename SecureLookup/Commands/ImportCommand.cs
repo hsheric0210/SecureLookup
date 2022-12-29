@@ -5,7 +5,7 @@ internal class ImportCommand : AbstractCommand
 	{
 	}
 
-	protected override string ParameterExplain => "<batchList_filePath> [separator]";
+	protected override string HelpMessage => "<batchList_filePath> [separator]";
 
 	protected override bool Execute(string[] args) => throw new NotImplementedException();
 }

@@ -2,15 +2,15 @@
 
 namespace SecureLookup;
 
-[XmlRoot("root"), ]
-public class XmlInnerRootEntry
+[XmlRoot("root")]
+public class DbInnerRoot
 {
 	[XmlArray("entries")]
 	[XmlArrayItem("entry")]
-	public List<XmlInnerEntry> Entries { get; set; } = new List<XmlInnerEntry>();
+	public List<DbEntry> Entries { get; set; } = new List<DbEntry>();
 }
 
-public class XmlInnerEntry
+public class DbEntry
 {
 	[XmlElement("name")]
 	public string Name { get; set; } = "";

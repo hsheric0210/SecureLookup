@@ -1,30 +1,36 @@
 ﻿using System.Text.RegularExpressions;
-using System.Xml;
 
 namespace SecureLookup.Commands;
+internal class ChangePasswordCommandParameter
+{
+	[ParameterAlias("pass", "psw", "pw", "p")]
+	[ParameterDescription($"The new database password; only '${ChangePasswordCommand.AllowedChars}' characters allowed.")]
+	public string Password { get; set; }
+}
+
 internal class ChangePasswordCommand : AbstractCommand
 {
+	internal const string AllowedChars = "A-Z a-z 0-9 !#$%&'()*+,-./:;<=>?@[]^`{|}~";
+
 	public ChangePasswordCommand(Program instance) : base(instance, "newdbpass")
 	{
 	}
 
-	protected override string ParameterExplain => @"
-  Mandatory parameters:
-	-pass<password>			- New database password";
+	protected override string HelpMessage => ParameterSerializer.GetHelpMessage<ChangePasswordCommand>();
 
 
 	protected override bool Execute(string[] args)
 	{
-		var pass = args.GetSwitch("pass");
-		if (string.IsNullOrWhiteSpace(pass))
+		if (!ParameterSerializer.TryParse(out ChangePasswordCommandParameter param, args))
 			return false;
 
-		if (Regex.IsMatch(pass, "[^\\w!#$%&'()*+,-./:;<=>?@\\[\\]^`{|}~]"))
+		var newPassword = param.Password;
+		if (Regex.IsMatch(newPassword, "[^\\w!#$%&'()*+,-./:;<=>?@\\[\\]^`{|}~]"))
 		{
 			Console.WriteLine("Password contains unsupported characters.");
-			Console.WriteLine("Allowed characters: A-Z a-z 0-9 !#$%&'()*+,-./:;<=>?@[]^`{|}~");
+			Console.WriteLine("Allowed characters: " + AllowedChars);
 		}
-		Instance.ChangePassword(pass);
+		Instance.ChangePassword(newPassword);
 		return true;
 	}
 }

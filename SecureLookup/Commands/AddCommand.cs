@@ -1,36 +1,68 @@
-﻿using System.Xml;
+﻿namespace SecureLookup.Commands;
 
-namespace SecureLookup.Commands;
+internal class AddCommandParameter
+{
+	[ParameterAlias("n")]
+	[ParameterDescription("Name of the entry; Each entry must have distinct name")]
+	[MandatoryParameter]
+	public string Name { get; set; } = "";
+
+	[ParameterAlias("Path", "f")]
+	[ParameterDescription("Original file path")]
+	[MandatoryParameter]
+	public string File { get; set; } = "";
+
+	[ParameterAlias("pass", "psw", "pw", "p")]
+	[ParameterDescription("The file encryption password")]
+	[MandatoryParameter]
+	public string Password { get; set; } = "";
+
+	[ParameterAlias("ren")]
+	[ParameterDescription("Rename existing file to generated name")]
+	public bool? Rename { get; set; }
+
+	[ParameterAlias("NewNameLen", "rsglen", "nnl")]
+	[ParameterDescription("Length of generated file name")]
+	public int? NewNameLength { get; set; }
+
+	[ParameterAlias("NewNameDict", "namedict", "dict")]
+	[ParameterDescription("Dictionary to generate new file name; Predefined dictionary names are available at README")]
+	public string? NewNameDictionary { get; set; }
+
+	[ParameterDescription("Entry id tag; Each entry must have distinct id")]
+	public string? Id { get; set; }
+
+	[ParameterDescription("Additional associated URLs separated in ';' char by default; the separator char could be reassigned by '-UrlSeparator' parameter")]
+	public string? Urls { get; set; }
+
+	[ParameterAlias("urlsep")]
+	[ParameterDescription("URL separator char to separate URLs in '-Urls' parameter")]
+	public string? UrlSeparator { get; set; }
+
+	[ParameterDescription("Additional associated notes separated in ';' char by default; the separator char could be reassigned by '-NoteSeparator' parameter")]
+	public string? Notes { get; set; }
+
+	[ParameterAlias("notesep")]
+	[ParameterDescription("Note separator char to separate notes in '-Notes' parameter")]
+	public string? NoteSeparator { get; set; }
+}
+
 internal class AddCommand : AbstractCommand
 {
 	public AddCommand(Program instance) : base(instance, "add")
 	{
 	}
 
-	protected override string ParameterExplain => @"
-  Mandatory parameters:
-	-name<name>		- Entry name
-	-file<filePath>		- Original file path
-	-pw<filePassword>	- File password
-  Optional parameters:
-		[-ren]				- Rename existing file to newly generated name
-		[-rsglen<newName_length>]	- Length of generated new name
-		[-dict<name_dictionary>]	- Name of dictionary to generate new file name
-		[-id<id>]			- Specify the id tag
-		[-urls<tags>]			- Additional tags, separated with ';' char by default
-		[-urlsep<char>]			- Specify url separator char used in '-urls' switch
-		[-notes<description>]		- Additional notes, separated with ';' char by default
-		[-notesep<char>]			- Specify note separator char used in '-notes' switch";
+	protected override string HelpMessage => ParameterSerializer.GetHelpMessage<AddCommandParameter>();
 
 
 	protected override bool Execute(string[] args)
 	{
-		var name = args.GetSwitch("name");
-		var file = args.GetSwitch("file");
-		var password = args.GetSwitch("pw");
-		if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(file) || string.IsNullOrWhiteSpace(password))
+		if (!ParameterSerializer.TryParse(out AddCommandParameter param, args))
 			return false;
 
+		var name = param.Name;
+		var file = param.File;
 		var fileDir = Path.GetDirectoryName(Path.GetFullPath(file));
 		if (string.IsNullOrWhiteSpace(fileDir))
 		{
@@ -38,27 +70,10 @@ internal class AddCommand : AbstractCommand
 			return false;
 		}
 
-		var dict = args.GetSwitch("dict") ?? "AlphaNumeric";
+		var dict = param.NewNameDictionary ?? "AlphaNumeric";
 
-		var id = args.GetSwitch("id");
-
-		// duplicate id check
-		if (id is not null && Instance.Db.Entries.Any(entry => string.Equals(id, entry.Id, StringComparison.OrdinalIgnoreCase)))
-		{
-			Console.WriteLine($"Entry with same id '{id}' already exists.");
-			return true;
-		}
-
-		var newNameLen = 64;
-		var rsglen = args.GetSwitch("rsglen");
-		if (rsglen is not null && int.TryParse(rsglen, out newNameLen))
-		{
-			Console.WriteLine("Failed to parse rsglen as number: " + rsglen);
-			return false;
-		}
-
-		var urlsep = args.GetSwitch("urlsep") ?? ";";
-		var notesep = args.GetSwitch("notesep") ?? ";";
+		var urlsep = param.UrlSeparator ?? ";";
+		var notesep = param.NoteSeparator ?? ";";
 
 		if (!new FileInfo(file).Exists)
 		{
@@ -68,33 +83,42 @@ internal class AddCommand : AbstractCommand
 
 		string newName;
 		do
-			newName = RandomStringGenerator.RandomString(newNameLen, dict);
+			newName = RandomStringGenerator.RandomString(param.NewNameLength ?? 64, dict);
 		while (new FileInfo(Path.Combine(fileDir, newName)).Exists); // Check if any file with same name already exists.
+
+		Console.WriteLine("New filename generated: " + newName);
 
 		var deleted = Instance.Db.Entries.RemoveAll(entry => string.Equals(name, entry.Name, StringComparison.OrdinalIgnoreCase));
 		if (deleted > 0)
-		{
 			Console.WriteLine($"Overwriting {deleted} entry with same name '{name}'.");
-			return true;
+
+		// duplicate id check
+		var id = param.Id;
+		if (id is not null)
+		{
+			deleted = Instance.Db.Entries.RemoveAll(entry => string.Equals(id, entry.Id, StringComparison.OrdinalIgnoreCase));
+			if (deleted > 0)
+				Console.WriteLine($"Overwriting {deleted} entries with same id '{id}'.");
 		}
 
-		Instance.Db.Entries.Add(new XmlInnerEntry()
+		Instance.Db.Entries.Add(new DbEntry()
 		{
 			Name = name,
 			OriginalFileName = file,
 			EncryptedFileName = newName,
-			Password = password,
+			Password = param.Password,
 			Id = id,
-			Urls = args.GetSwitch("urls")?.Split(urlsep).ToList(),
-			Notes = args.GetSwitch("notes")?.Split(notesep).ToList()
+			Urls = param.Urls?.Split(urlsep).ToList(),
+			Notes = param.Notes?.Split(notesep).ToList()
 		});
 		Console.WriteLine("Entry added. Don't forget to save the database!");
 
-		if (args.HasSwitch("ren"))
+		if (param.Rename == true)
 		{
 			try
 			{
 				File.Move(file, Path.Combine(fileDir, newName));
+				Console.WriteLine("Generated name applied to the file.");
 			}
 			catch (Exception ex)
 			{

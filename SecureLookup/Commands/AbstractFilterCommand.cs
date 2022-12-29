@@ -1,42 +1,56 @@
 ﻿using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
+
+internal class FilterCommandParameter
+{
+	[ParameterAlias("m")]
+	[ParameterDescription("Filter mode: (e)quals/(c)ontains/(s)tartsWith/e(n)dsWith/(r)egex")]
+	[MandatoryParameter]
+	public char Mode { get; set; } = 'e';
+
+	[ParameterAlias("t")]
+	[ParameterDescription("Filter target: (a)ll/(n)ame/(i)d/o(r)iginalFileName/(e)ncryptedFileName/(u)rls/n(o)tes")]
+	[MandatoryParameter]
+	public char Target { get; set; } = 'n';
+
+	[ParameterAlias("kw", "k", "w")]
+	[ParameterDescription("Filter keyword")]
+	[MandatoryParameter]
+	public string Keyword { get; set; } = "";
+
+	[ParameterAlias("casesens", "cs")]
+	[ParameterDescription("Case sensitive search (Search is case insensitive by default, even regex)")]
+	[MandatoryParameter]
+	public bool? CaseSensitive { get; set; }
+}
+
 internal abstract class AbstractFilterCommand : AbstractCommand
 {
 	protected AbstractFilterCommand(Program instance, string name) : base(instance, name)
 	{
 	}
 
-	protected virtual string MandatoryParameters { get; } = "";
-	protected virtual string OptionalParameters { get; } = "";
+	protected virtual string AdditionalHelpMessage { get; } = "";
 
-	protected override string ParameterExplain => $@"
-  Mandatory parameters:
-	-mode<(e)quals/(c)ontains/(s)tartsWith/e(n)dsWith/(r)egex>			- Search mode (alias: '-m')
-	-target<(a)ll/(n)ame/(i)d/o(r)iginalFileName/(e)ncryptedFileName/(u)rls/n(o)tes>		- Search targets (alias: '-t')
-	-keyword<keyword/regex>						- Keyword to search / Regex (alias: '-kw', '-k'){MandatoryParameters}
-  Optional parameter:
-	[-cs]		- Case sensitive search (Search is case insensitive by default, even regex){OptionalParameters}";
+	protected override string HelpMessage => ParameterSerializer.GetHelpMessage<FilterCommandParameter>() + Environment.NewLine + AdditionalHelpMessage;
 
 	protected override bool Execute(string[] args)
 	{
-		var mode = args.GetSwitches("mode", "m");
-		var target = args.GetSwitches("target", "t");
-		var keyword = args.GetSwitches("keyword", "kw", "k");
-		if (string.IsNullOrWhiteSpace(mode) || string.IsNullOrWhiteSpace(target) || string.IsNullOrWhiteSpace(keyword))
+		if (!ParameterSerializer.TryParse(out FilterCommandParameter param, args))
 			return false;
-		Predicate<string>? pred = CreatePredicate(mode[0], keyword, args.HasSwitch("cs"));
+		Predicate<string>? pred = CreatePredicate(param.Mode, param.Keyword, args.HasSwitch("cs"));
 		if (pred is null)
 		{
-			Console.WriteLine("Unsupported mode: " + mode);
+			Console.WriteLine("Unsupported mode: " + param.Mode);
 			return false;
 		}
 
-		var targetChar = char.ToLowerInvariant(target[0]);
+		var targetChar = char.ToLowerInvariant(param.Target);
 		var all = targetChar == 'a';
 		try
 		{
-			ExecuteForEntries(Instance.Db.Entries.Where(entry =>
+			ExecuteForEntries(args, Instance.Db.Entries.Where(entry =>
 			{
 				if ((all || targetChar == 'n') && pred(entry.Name))
 					return true;
@@ -55,7 +69,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		}
 		catch (RegexParseException ex)
 		{
-			Console.WriteLine("Invalid regex: " + keyword);
+			Console.WriteLine("Invalid regex: " + param.Keyword);
 			Console.WriteLine("Detail: " + ex.Message);
 			return false;
 		}
@@ -69,7 +83,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		return true;
 	}
 
-	protected abstract bool ExecuteForEntries(IList<XmlInnerEntry> entries);
+	protected abstract bool ExecuteForEntries(string[] args, IList<DbEntry> entries);
 
 	private static Predicate<string>? CreatePredicate(char mode, string keyword, bool caseSens)
 	{

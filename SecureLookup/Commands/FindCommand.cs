@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
 internal class FindCommand : AbstractFilterCommand
@@ -8,11 +7,11 @@ internal class FindCommand : AbstractFilterCommand
 	{
 	}
 
-	protected override bool ExecuteForEntries(IList<XmlInnerEntry> entries)
+	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
 		var builder = new StringBuilder();
 		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries found.");
-		foreach (XmlInnerEntry entry in entries)
+		foreach (DbEntry entry in entries)
 		{
 			builder.AppendLine().AppendLine("***");
 			builder.Append("Name: ").AppendLine(entry.Name);

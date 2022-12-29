@@ -18,7 +18,7 @@ internal class Encryption
 	{
 	}
 
-	public string Encrypt(XmlInnerRootEntry root)
+	public string Encrypt(DbInnerRoot root)
 	{
 		using var ms = new MemoryStream();
 		using (Aes cipher = CreateCipher())
@@ -26,26 +26,21 @@ internal class Encryption
 			using var cs = new CryptoStream(ms, cipher.CreateEncryptor(), CryptoStreamMode.Write);
 			using var sw = new StreamWriter(cs);
 			using var xw = XmlWriter.Create(sw);
-			var serializer = new XmlSerializer(typeof(XmlInnerRootEntry));
-			var ns = new XmlSerializerNamespaces();
-			ns.Add("", "");
-			serializer.Serialize(xw, root, ns);
+			var serializer = new XmlSerializer(typeof(DbInnerRoot));
+			serializer.Serialize(xw, root);
 			xw.Flush();
 		}
 		return Convert.ToBase64String(ms.ToArray());
 	}
 
-	public XmlInnerRootEntry Decrypt(string encrypted)
+	public DbInnerRoot Decrypt(string encrypted)
 	{
 		using var ms = new MemoryStream(Convert.FromBase64String(encrypted));
 		using Aes cipher = CreateCipher();
 		using var cs = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read);
 
-		var serializer = new XmlSerializer(typeof(XmlInnerRootEntry));
-		var obj = serializer.Deserialize(cs);
-		if (obj is not XmlInnerRootEntry root)
-			throw new InvalidOperationException("Deserialization result is not XmlInnerRoot.");
-		return root;
+		var serializer = new XmlSerializer(typeof(DbInnerRoot));
+		return (DbInnerRoot)serializer.Deserialize(cs)!;
 	}
 
 	private Aes CreateCipher()

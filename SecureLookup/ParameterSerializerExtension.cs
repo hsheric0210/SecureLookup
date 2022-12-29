@@ -1,5 +1,5 @@
 ﻿namespace SecureLookup;
-public static class ArgParser
+public static class ParameterSerializerExtension
 {
 	private static readonly char[] switchPrefix = new char[] { '-', '/' };
 
