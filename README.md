@@ -51,3 +51,52 @@ All of these are same
 These are wrong
 * ```-name "Hello World!"```
 * ```/name "Hello World!"```
+
+## Database XML structure
+
+### Outer database
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<encrypted xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <kdf>
+    <type>(string: KDF Algorithm)</type>
+    <iterations>(int: KDF Iteration count)</iterations>
+    <salt>(base64-string: KDF Salt)</salt>
+    <memsize>(int: KDF Memory block size)</memsize>
+    <parallelism>(int: KDF Parallelism)</parallelism>
+  </kdf>
+  <hash>(hex-string: SHA-3 Hash of encrypted data)</hash>
+  <data>(base64-string: The encrypted inner database)</data>
+</encrypted>
+```
+
+### Inner database
+Inner database is encrypted by default. This decrypted-form xml file can be obtained with '-ExportFile' switch
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <entries>
+    <entry>
+      <name>(string: Entry name)</name>
+      <originalFileName>(string: The original file or folder name)</originalFileName>
+      <archiveFileName>(string: Archive file name)</archiveFileName>
+      <password>(string: Archive password)</password>
+      <urls>
+        <url>(string: url 1)</url>
+        <url>(string: url 2)</url>
+        <url>(string: url 3)</url>
+        <url>...</url>
+      </urls>
+      <notes>
+        <note>(string: note 1)</note>
+        <note>(string: note 2)</note>
+        <note>(string: note 3)</note>
+        <note>...</note>
+      </notes>
+    </entry>
+    <entry>
+        ...
+    </entry>
+  </entries>
+</root>
+```
