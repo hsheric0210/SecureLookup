@@ -46,13 +46,15 @@ public class DbEncrypted
 		};
 
 		var serializer = new XmlSerializer(typeof(DbOuterRoot));
-		using FileStream fs = File.Open(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read);
-		using var xw = XmlWriter.Create(fs, new XmlWriterSettings
+		using (FileStream fs = File.Open(fileName, FileMode.Create, FileAccess.Write, FileShare.Read))
 		{
-			Encoding = Encoding.UTF8,
-			Indent = true
-		});
-		serializer.Serialize(xw, outer);
+			using var xw = XmlWriter.Create(fs, new XmlWriterSettings
+			{
+				Encoding = Encoding.UTF8,
+				Indent = true
+			});
+			serializer.Serialize(xw, outer);
+		}
 
 		Dirty = false;
 	}

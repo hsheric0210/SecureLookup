@@ -1,15 +1,18 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using System.Reflection;
 
 namespace SecureLookup;
 internal static class RandomStringGenerator
 {
-	private const string LowerAlpha = "abcdefghijklmnopqrstuvwxyz";
-	private const string UpperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	private const string Numeric = "0123456789";
-	private const string LowerAlphaNumeric = LowerAlpha + Numeric;
-	private const string UpperAlphaNumeric = UpperAlpha + Numeric;
-	private const string AlphaNumeric = UpperAlpha + LowerAlpha + Numeric;
+	public const string Special = "!#$%&'()*+,-./:;<=>?@[]^_`{}~";
+	public const string LowerAlpha = "abcdefghijklmnopqrstuvwxyz";
+	public const string UpperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	public const string Numeric = "0123456789";
+	public const string LowerAlphaNumeric = LowerAlpha + Numeric;
+	public const string UpperAlphaNumeric = UpperAlpha + Numeric;
+	public const string AlphaNumeric = UpperAlpha + LowerAlpha + Numeric;
+	public const string SpecialAlphaNumeric = UpperAlpha + LowerAlpha + Numeric + Special;
 
 	public static string RandomString(int length, string dictionaryName)
 	{
@@ -20,14 +23,18 @@ internal static class RandomStringGenerator
 		return builder.ToString();
 	}
 
-	private static string GetDictionary(string dictionaryName) => dictionaryName.ToLowerInvariant() switch
+	private static string GetDictionary(string dictionaryName)
 	{
-		"loweralpha" => LowerAlpha,
-		"upperalpha" => UpperAlpha,
-		"numeric" => Numeric,
-		"loweralphanumeric" => LowerAlphaNumeric,
-		"upperalphanumeric" => UpperAlphaNumeric,
-		"alphanumeric" => AlphaNumeric,
-		_ => dictionaryName // use itself as dictionary
-	};
+		return dictionaryName.ToLowerInvariant() switch
+		{
+			"loweralpha" => LowerAlpha,
+			"upperalpha" => UpperAlpha,
+			"numeric" => Numeric,
+			"loweralphanumeric" => LowerAlphaNumeric,
+			"upperalphanumeric" => UpperAlphaNumeric,
+			"alphanumeric" => AlphaNumeric,
+			"specialalphanumeric" => SpecialAlphaNumeric,
+			_ => dictionaryName // use itself as dictionary
+		};
+	}
 }

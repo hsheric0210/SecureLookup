@@ -5,12 +5,12 @@ namespace SecureLookup.Commands;
 internal class FilterCommandParameter
 {
 	[ParameterAlias("m")]
-	[ParameterDescription("Filter mode: (e)quals/(c)ontains/(s)tartsWith/e(n)dsWith/(r)egex")]
+	[ParameterDescription("Filter mode: (E)quals/(C)ontains/(S)tartsWith/e(N)dsWith/(R)egex")]
 	[MandatoryParameter]
 	public char Mode { get; set; } = 'e';
 
 	[ParameterAlias("t")]
-	[ParameterDescription("Filter target: (a)ll/(n)ame/(i)d/o(r)iginalFileName/(e)ncryptedFileName/(u)rls/n(o)tes")]
+	[ParameterDescription("Filter target: (A)ll/(N)ame/(I)d/o(R)iginalFileName/(E)ncryptedFileName/(U)rls/n(O)tes")]
 	[MandatoryParameter]
 	public char Target { get; set; } = 'n';
 

@@ -4,14 +4,6 @@ using System.Security.Cryptography;
 namespace SecureLookup;
 internal static class Crypto
 {
-	public static byte[] GenerateBytes(int size)
-	{
-		var bytes = new byte[size];
-		using var rng = RandomNumberGenerator.Create();
-		rng.GetBytes(bytes);
-		return bytes;
-	}
-
 	public static byte[] DeriveKey(byte[] password, byte[] salt, int desiredLength)
 	{
 		var hasher = new Argon2id(password)

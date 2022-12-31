@@ -14,7 +14,7 @@ internal class Encryption
 		derivedKey = Crypto.DeriveKey(password, salt, 48); // 48 = 32(key) + 16(iv)
 	}
 
-	public Encryption(byte[] password) : this(password, Crypto.GenerateBytes(16))
+	public Encryption(byte[] password) : this(password, RandomNumberGenerator.GetBytes(16))
 	{
 	}
 
@@ -38,7 +38,6 @@ internal class Encryption
 		using var ms = new MemoryStream(Convert.FromBase64String(encrypted));
 		using Aes cipher = CreateCipher();
 		using var cs = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read);
-
 		var serializer = new XmlSerializer(typeof(DbInnerRoot));
 		return (DbInnerRoot)serializer.Deserialize(cs)!;
 	}

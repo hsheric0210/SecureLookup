@@ -1,5 +1,7 @@
 ﻿using SecureLookup.Commands;
 using System.Text;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace SecureLookup;
 
@@ -9,7 +11,6 @@ public class ProgramParameter
 	[ParameterDescription("The database file to use")]
 	[MandatoryParameter]
 	public string Database { get; set; } = "";
-
 
 	[ParameterAlias("pass", "psw", "pw", "p")]
 	[ParameterDescription("The password to open the database")]
@@ -23,17 +24,30 @@ public class ProgramParameter
 	[ParameterAlias("noloop", "nl")]
 	[ParameterDescription("Disable the main loop. The program will immediately exit after executing the command specified by '-command' parameter.")]
 	public bool? DisableLoop { get; set; }
+
+	// TODO
+	[ParameterAlias("batch", "bf")]
+	[ParameterDescription("Execute each lines of specified file as command AND EXIT. Remember to append 'save' at the last line to save all changes.")]
+	public string? BatchFile { get; set; }
+
+	// TODO
+	[ParameterAlias("export", "ex")]
+	[ParameterDescription("Export all entries to specified file AND EXIT.")]
+	public string? ExportFile { get; set; }
 }
 
 public class Program
 {
+	private const string ConfigFileName = "config.xml";
+
 	private bool loop;
+	private readonly string dbFileName;
 	internal DbEncrypted EncryptedDb { get; private set; }
 
 	public string DbFile { get; set; }
 	public CommandFactory CommandFactory { get; }
 	public DbInnerRoot Db { get; }
-	public bool DbDirty { get; private set; }
+	public ConfigRoot Config { get; }
 
 	public static void Main(params string[] args)
 	{
@@ -59,9 +73,25 @@ public class Program
 
 	public Program(string dbFile, string password, bool loop)
 	{
-		DbFile = dbFile;
 		try
 		{
+			Config = new ConfigRoot();
+			if (new FileInfo(ConfigFileName).Exists)
+				Config = LoadConfig();
+			else
+				WriteDefaultConfig(Config);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Failed to load the configuration file.");
+			Console.WriteLine(ex);
+			Environment.Exit(ex.HResult);
+		}
+
+		try
+		{
+			DbFile = Path.GetFullPath(dbFile);
+			dbFileName = Path.GetFileName(DbFile);
 			EncryptedDb = new DbEncrypted(dbFile, Encoding.UTF8.GetBytes(password));
 			Db = new DbInnerRoot();
 			if (new FileInfo(dbFile).Exists)
@@ -71,7 +101,7 @@ public class Program
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine("Failed to load the database file. Mayby mismatched key?");
+			Console.WriteLine("Failed to load the database file. Maybe mismatched key?");
 			Console.WriteLine(ex);
 			Environment.Exit(ex.HResult);
 		}
@@ -80,7 +110,20 @@ public class Program
 		CommandFactory = new CommandFactory(this);
 	}
 
-	public void MarkDbDirty() => DbDirty = true;
+	private static ConfigRoot LoadConfig()
+	{
+		using FileStream stream = File.Open(ConfigFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+		var serializer = new XmlSerializer(typeof(ConfigRoot));
+		return (ConfigRoot)serializer.Deserialize(stream)!;
+	}
+
+	private static void WriteDefaultConfig(ConfigRoot config)
+	{
+		using FileStream stream = File.Open(ConfigFileName, FileMode.Create, FileAccess.Write, FileShare.None);
+		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true });
+		var serializer = new XmlSerializer(typeof(ConfigRoot));
+		serializer.Serialize(xw, config);
+	}
 
 	public void ChangePassword(string newPassword)
 	{
@@ -104,11 +147,11 @@ public class Program
 		}
 	}
 
-	public void Exit()
+	public void Exit(bool discard)
 	{
-		if (EncryptedDb.Dirty)
-			SaveDb();
 		loop = false;
+		if (!discard && EncryptedDb.Dirty)
+			SaveDb();
 	}
 
 	private void Execute(string cmdString, string[] args)
@@ -124,7 +167,7 @@ public class Program
 	{
 		while (loop)
 		{
-			Console.Write(DbFile + ">");
+			Console.Write(dbFileName + ">");
 			var linePieces = Console.ReadLine()?.SplitOutsideQuotes(' ');
 			if (linePieces is not null && linePieces.Length > 0)
 				Execute(linePieces[0], linePieces.Skip(1).ToArray());

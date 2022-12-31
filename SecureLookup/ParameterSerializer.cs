@@ -4,13 +4,15 @@ using System.Text;
 namespace SecureLookup;
 internal static class ParameterSerializer
 {
+	private static T? Instantize<T>() => (T?)typeof(T).GetConstructor(Array.Empty<Type>())?.Invoke(Array.Empty<object>());
+
 	public static bool TryParse<T>(out T param, params string[] args)
 	{
 		Type targetType = typeof(T);
-		ConstructorInfo? targetCtor = targetType.GetConstructor(Array.Empty<Type>());
-		if (targetCtor is null)
-			throw new TypeLoadException("Type " + targetType + " doesn't have a argument-less constructor.");
-		param = (T)targetCtor.Invoke(Array.Empty<object>());
+		T? instance = Instantize<T>();
+		if (instance is null)
+			throw new TypeLoadException($"Type {typeof(T)} doesn't have an argument-less constructor.");
+		param = instance;
 
 		// Process properties
 		foreach (PropertyInfo prop in targetType.GetProperties())
@@ -43,10 +45,11 @@ internal static class ParameterSerializer
 		return true;
 	}
 
-	public static string GetHelpMessage<T>()
+	public static string GetHelpMessage<T>(bool placeholder = true)
 	{
 		var builder = new StringBuilder();
-		builder.AppendLine("Available parameters:");
+		if (placeholder)
+			builder.AppendLine("Available parameters:");
 
 		// Process properties
 		foreach (PropertyInfo prop in typeof(T).GetProperties())
@@ -56,7 +59,7 @@ internal static class ParameterSerializer
 			Type propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 			var propTypeName = propType.Name;
 
-			builder.Append("  ");
+			builder.Append('\t');
 			if (optional)
 				builder.Append("  [");
 			if (propType == typeof(bool))
@@ -65,9 +68,20 @@ internal static class ParameterSerializer
 				builder.AppendJoin(' ', names.Select(name => $"-{name}<{propTypeName}>"));
 			if (optional)
 				builder.Append(']');
+			builder.AppendLine();
 			var desc = GetParameterDescription(prop);
 			if (!string.IsNullOrWhiteSpace(desc))
-				builder.Append("    - ").Append(desc);
+				builder.Append("\t\t- ").Append(desc);
+			if (optional)
+			{
+				T? instance = Instantize<T>();
+				if (instance is not null)
+				{
+					var defValue = prop.GetValue(instance);
+					if (defValue is not null)
+						builder.AppendLine().Append("\t\t(Default: ").Append(defValue).Append(')');
+				}
+			}
 			builder.AppendLine();
 		}
 
@@ -83,8 +97,6 @@ internal static class ParameterSerializer
 
 		var attributes = (ParameterAliasAttribute[])info.GetCustomAttributes<ParameterAliasAttribute>(false);
 		names.AddRange(attributes.SelectMany(attribute => attribute.Aliases.Select(alias => alias.ToLowerInvariant())));
-
-		names.Sort((string a, string b) => b.Length.CompareTo(a.Length)); // Descending order
 		return names.Distinct().ToList();
 	}
 

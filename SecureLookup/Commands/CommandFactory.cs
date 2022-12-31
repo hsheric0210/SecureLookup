@@ -15,14 +15,15 @@ public class CommandFactory
 	private void RegisterDefaultCommands(IList<AbstractCommand> cmdList)
 	{
 		cmdList.Add(new AddCommand(instance));
+		cmdList.Add(new ExtractCommand(instance));
 		cmdList.Add(new FindCommand(instance));
+		cmdList.Add(new EditCommand(instance));
 		cmdList.Add(new DropCommand(instance));
 		cmdList.Add(new SaveCommand(instance));
 		cmdList.Add(new ImportCommand(instance));
 		cmdList.Add(new ChangePasswordCommand(instance));
 		cmdList.Add(new HelpCommand(instance));
 		cmdList.Add(new ExitCommand(instance));
-		// TODO: Export(Dump), Password, etc.
 	}
 
 	public AbstractCommand? FindCommand(string name) => RegisteredCommands.FirstOrDefault(cmd => cmd.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
