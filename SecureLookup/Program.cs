@@ -214,7 +214,10 @@ public class Program
 			Console.Write(dbFileName + ">");
 			var linePieces = Console.ReadLine()?.SplitOutsideQuotes(' ');
 			if (linePieces is not null && linePieces.Length > 0)
+			{
 				Execute(linePieces[0], linePieces.Skip(1).ToArray());
+				Console.WriteLine();
+			}
 		}
 	}
 }

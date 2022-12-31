@@ -21,10 +21,14 @@ internal class DropCommand : AbstractFilterCommand
 
 	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
-		Instance.EncryptedDb.MarkDirty();
+		Console.WriteLine($"*** Total {entries.Count} entries selected.");
+		if (entries.Count > 1 && !ConsoleUtils.CheckContinue("Multiple entries are selected."))
+		{
+			return true;
+		}
 
 		var builder = new StringBuilder();
-		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries dropped.");
+		Instance.EncryptedDb.MarkDirty();
 		foreach (DbEntry entry in entries)
 		{
 			AppendEntry(builder, entry);

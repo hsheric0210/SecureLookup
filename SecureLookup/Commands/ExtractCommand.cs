@@ -61,11 +61,10 @@ internal class ExtractCommand : AbstractFilterCommand
 		var assumeYes = param.AssumeAllYes;
 
 		var builder = new StringBuilder();
-		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries found.");
+		Console.WriteLine($"*** Total {entries.Count} entries selected.");
 		if (assumeYes && entries.Count > 1)
 		{
-			Console.Write("Multiple entries are selected. ");
-			if (!CheckContinue())
+			if (!ConsoleUtils.CheckContinue("Multiple entries are selected."))
 				return true;
 		}
 
@@ -83,8 +82,8 @@ internal class ExtractCommand : AbstractFilterCommand
 			var target = Path.Combine(dest, entry.OriginalFileName);
 			if (!assumeYes && new FileInfo(target).Exists)
 			{
-				Console.WriteLine("Target file will be overwritten: " + target);
-				if (!CheckContinue())
+				Console.WriteLine("Following file will be overwritten: " + target);
+				if (!ConsoleUtils.CheckContinue())
 					return true;
 			}
 
@@ -112,11 +111,5 @@ internal class ExtractCommand : AbstractFilterCommand
 			Task.WhenAll(taskQueue).Wait();
 
 		return true;
-	}
-
-	private static bool CheckContinue()
-	{
-		Console.Write("Do you want to continue? [Y/N]: ");
-		return Console.ReadKey().Key == ConsoleKey.Y;
 	}
 }

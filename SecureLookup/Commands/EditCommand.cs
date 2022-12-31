@@ -65,14 +65,22 @@ internal class EditCommand : AbstractFilterCommand
 
 		Instance.EncryptedDb.MarkDirty();
 
-		var builder = new StringBuilder();
-		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries found.");
-		if (entries.Count > 1 && !string.IsNullOrWhiteSpace(param.Name))
+		Console.WriteLine($"*** Total {entries.Count} entries selected.");
+		if (entries.Count > 1)
 		{
-			Console.WriteLine("Can't rename mutiple entries to the same name because duplicated names are not allowed");
-			return true;
+			if (!string.IsNullOrWhiteSpace(param.Name))
+			{
+				Console.WriteLine("Can't rename mutiple entries to the same name because duplicated names are not allowed");
+				return true;
+			}
+			else
+			{
+				if (!ConsoleUtils.CheckContinue("Multiple entries are selected."))
+					return true;
+			}
 		}
 
+		var builder = new StringBuilder();
 		foreach (DbEntry entry in entries)
 		{
 			builder.AppendLine().AppendLine("***");
