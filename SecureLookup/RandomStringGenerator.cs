@@ -5,14 +5,14 @@ using System.Reflection;
 namespace SecureLookup;
 internal static class RandomStringGenerator
 {
-	public const string Special = "!#$%&'()*+,-./:;<=>?@[]^_`{}~";
 	public const string LowerAlpha = "abcdefghijklmnopqrstuvwxyz";
 	public const string UpperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	public const string Numeric = "0123456789";
+	public const string Special = "!#$%&'()*+,-./:;<=>?@[]^_`{}~";
 	public const string LowerAlphaNumeric = LowerAlpha + Numeric;
 	public const string UpperAlphaNumeric = UpperAlpha + Numeric;
-	public const string AlphaNumeric = UpperAlpha + LowerAlpha + Numeric;
-	public const string SpecialAlphaNumeric = UpperAlpha + LowerAlpha + Numeric + Special;
+	public const string MixedAlphaNumeric = UpperAlpha + LowerAlpha + Numeric;
+	public const string SpecialMixedAlphaNumeric = LowerAlpha + Numeric + Special;
 
 	public static string RandomString(int length, string dictionaryName)
 	{
@@ -29,11 +29,11 @@ internal static class RandomStringGenerator
 		{
 			"loweralpha" => LowerAlpha,
 			"upperalpha" => UpperAlpha,
+			"mixedalphanumeric" or "alphanumeric" => MixedAlphaNumeric,
 			"numeric" => Numeric,
 			"loweralphanumeric" => LowerAlphaNumeric,
 			"upperalphanumeric" => UpperAlphaNumeric,
-			"alphanumeric" => AlphaNumeric,
-			"specialalphanumeric" => SpecialAlphaNumeric,
+			"specialmixedalphanumeric" => SpecialMixedAlphaNumeric,
 			_ => dictionaryName // use itself as dictionary
 		};
 	}
