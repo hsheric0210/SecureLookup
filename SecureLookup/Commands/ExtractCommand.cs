@@ -6,7 +6,7 @@ namespace SecureLookup.Commands;
 internal class OpenCommandParameter
 {
 	[ParameterAlias("Dest")]
-	[ParameterDescription("The folder where the archive will be extracted")]
+	[ParameterDescription("The folder where the archive will be extracted; Warning: All contents will be extracted to THE SUBFOLDER in specified destination directory")]
 	[MandatoryParameter]
 	public string Destination { get; set; } = "";
 
@@ -27,7 +27,7 @@ internal class ExtractCommand : AbstractFilterCommand
 {
 	public override string Description => "Open specified archive file with specified unarchiver.";
 
-	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<OpenCommandParameter>(false);
+	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<OpenCommandParameter>("Extraction parameters");
 
 	public ExtractCommand(Program instance) : base(instance, "extract")
 	{
@@ -73,7 +73,7 @@ internal class ExtractCommand : AbstractFilterCommand
 
 		foreach (DbEntry entry in entries)
 		{
-			var archive = Path.Combine(repo, entry.EncryptedFileName);
+			var archive = Path.Combine(repo, entry.ArchiveFileName);
 			if (!new FileInfo(archive).Exists)
 			{
 				Console.WriteLine("Archive not exists: " + archive);
@@ -89,7 +89,7 @@ internal class ExtractCommand : AbstractFilterCommand
 			}
 
 			Console.WriteLine("Archive name: " + entry.Name);
-			Console.WriteLine("Archive file-name: " + entry.EncryptedFileName);
+			Console.WriteLine("Archive file-name: " + entry.ArchiveFileName);
 			Console.WriteLine("Archive password: " + entry.Password);
 
 			taskQueue.Add(Task.Run(async () =>

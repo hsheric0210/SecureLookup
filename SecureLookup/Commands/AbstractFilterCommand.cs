@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
 
@@ -6,23 +7,19 @@ internal class FilterCommandParameter
 {
 	[ParameterAlias("m")]
 	[ParameterDescription("Filter mode: (E)quals/(C)ontains/(S)tartsWith/e(N)dsWith/(R)egex")]
-	[MandatoryParameter]
-	public char Mode { get; set; } = 'e';
+	public char Mode { get; set; } = 'c';
 
 	[ParameterAlias("t")]
-	[ParameterDescription("Filter target: (A)ll/(N)ame/(I)d/o(R)iginalFileName/(E)ncryptedFileName/(U)rls/n(O)tes")]
-	[MandatoryParameter]
+	[ParameterDescription("Filter target: (A)ll/(N)ame/o(R)iginalFileName/(E)ncryptedFileName/(U)rls/n(O)tes")]
 	public char Target { get; set; } = 'n';
 
 	[ParameterAlias("kw", "k", "w")]
 	[ParameterDescription("Filter keyword")]
-	[MandatoryParameter]
 	public string Keyword { get; set; } = "";
 
 	[ParameterAlias("casesens", "cs")]
 	[ParameterDescription("Case sensitive search (Search is case insensitive by default, even regex)")]
-	[MandatoryParameter]
-	public bool? CaseSensitive { get; set; }
+	public bool CaseSensitive { get; set; }
 }
 
 internal abstract class AbstractFilterCommand : AbstractCommand
@@ -33,7 +30,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 
 	protected virtual string AdditionalHelpMessage { get; } = "";
 
-	public override string HelpMessage => ParameterSerializer.GetHelpMessage<FilterCommandParameter>() + Environment.NewLine + AdditionalHelpMessage;
+	public override string HelpMessage => ParameterSerializer.GetHelpMessage<FilterCommandParameter>("Filter parameters") + Environment.NewLine + AdditionalHelpMessage;
 
 	protected override bool Execute(string[] args)
 	{
@@ -50,15 +47,13 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		var all = targetChar == 'a';
 		try
 		{
-			ExecuteForEntries(args, Instance.Db.Entries.Where(entry =>
+			return ExecuteForEntries(args, Instance.Db.Entries.Where(entry =>
 			{
 				if ((all || targetChar == 'n') && pred(entry.Name))
 					return true;
-				if ((all || targetChar == 'i') && !string.IsNullOrWhiteSpace(entry.Id) && pred(entry.Id))
-					return true;
 				if ((all || targetChar == 'r') && pred(entry.OriginalFileName))
 					return true;
-				if ((all || targetChar == 'e') && pred(entry.EncryptedFileName))
+				if ((all || targetChar == 'e') && pred(entry.ArchiveFileName))
 					return true;
 				if ((all || targetChar == 'u') && entry.Urls?.Any(url => pred(url)) == true)
 					return true;
@@ -79,8 +74,6 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 			Console.WriteLine(ex);
 			return false;
 		}
-
-		return true;
 	}
 
 	protected abstract bool ExecuteForEntries(string[] args, IList<DbEntry> entries);
@@ -97,5 +90,27 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 			'r' => (string str) => new Regex(keyword, caseSens ? RegexOptions.None : RegexOptions.IgnoreCase).Match(str).Success,
 			_ => null
 		};
+	}
+
+	protected void AppendEntry(StringBuilder builder, DbEntry entry)
+	{
+		builder.AppendLine().AppendLine("***");
+		builder.Append("Name: ").AppendLine(entry.Name);
+		builder.Append("Original file name: ").AppendLine(entry.OriginalFileName);
+		builder.Append("Encrypted file name: ").AppendLine(entry.ArchiveFileName);
+		builder.Append("Password: ").AppendLine(entry.Password);
+		if (entry.Urls is not null && entry.Urls.Count > 0)
+		{
+			builder.AppendLine("Urls:");
+			foreach (var url in entry.Urls)
+				builder.Append("* ").AppendLine(url);
+		}
+		if (entry.Notes is not null && entry.Notes.Count > 0)
+		{
+			builder.AppendLine("Urls:");
+			foreach (var notes in entry.Notes)
+				builder.Append("* ").AppendLine(notes);
+		}
+		builder.AppendLine("***");
 	}
 }

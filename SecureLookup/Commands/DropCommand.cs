@@ -13,7 +13,7 @@ internal class DropCommand : AbstractFilterCommand
 {
 	public override string Description => "Removes the entries matching the filter from the database.";
 
-	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<DropCommandParameter>(false);
+	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<DropCommandParameter>("Drop parameters");
 
 	public DropCommand(Program instance) : base(instance, "drop")
 	{
@@ -27,26 +27,7 @@ internal class DropCommand : AbstractFilterCommand
 		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries dropped.");
 		foreach (DbEntry entry in entries)
 		{
-			builder.AppendLine().AppendLine("***");
-			builder.Append("Name: ").AppendLine(entry.Name);
-			builder.Append("Original file name: ").AppendLine(entry.OriginalFileName);
-			builder.Append("Encrypted file name: ").AppendLine(entry.EncryptedFileName);
-			builder.Append("Password: ").AppendLine(entry.Password);
-			if (!string.IsNullOrWhiteSpace(entry.Id))
-				builder.Append("Id: ").AppendLine(entry.Id);
-			if (entry.Urls is not null && entry.Urls.Count > 0)
-			{
-				builder.AppendLine("Urls:");
-				foreach (var url in entry.Urls)
-					builder.Append("* ").AppendLine(url);
-			}
-			if (entry.Notes is not null && entry.Notes.Count > 0)
-			{
-				builder.AppendLine("Urls:");
-				foreach (var notes in entry.Notes)
-					builder.Append("* ").AppendLine(notes);
-			}
-			builder.AppendLine("***");
+			AppendEntry(builder, entry);
 			Instance.Db.Entries.Remove(entry);
 		}
 		Console.WriteLine(builder.ToString());

@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -25,7 +26,7 @@ internal class Encryption
 		{
 			using var cs = new CryptoStream(ms, cipher.CreateEncryptor(), CryptoStreamMode.Write);
 			using var sw = new StreamWriter(cs);
-			using var xw = XmlWriter.Create(sw);
+			using var xw = XmlWriter.Create(sw, new XmlWriterSettings { Encoding = new UTF8Encoding(false) });
 			var serializer = new XmlSerializer(typeof(DbInnerRoot));
 			serializer.Serialize(xw, root);
 			xw.Flush();
@@ -38,8 +39,9 @@ internal class Encryption
 		using var ms = new MemoryStream(Convert.FromBase64String(encrypted));
 		using Aes cipher = CreateCipher();
 		using var cs = new CryptoStream(ms, cipher.CreateDecryptor(), CryptoStreamMode.Read);
+		using var sr = new StreamReader(cs, Encoding.UTF8, false);
 		var serializer = new XmlSerializer(typeof(DbInnerRoot));
-		return (DbInnerRoot)serializer.Deserialize(cs)!;
+		return (DbInnerRoot)serializer.Deserialize(sr)!;
 	}
 
 	private Aes CreateCipher()

@@ -1,4 +1,5 @@
-﻿using System.Xml.Serialization;
+﻿using System.Text;
+using System.Xml.Serialization;
 
 namespace SecureLookup;
 
@@ -18,14 +19,11 @@ public class DbEntry
 	[XmlElement("originalFileName")]
 	public string OriginalFileName { get; set; } = "";
 
-	[XmlElement("encryptedFileName")]
-	public string EncryptedFileName { get; set; } = "";
+	[XmlElement("archiveFileName")]
+	public string ArchiveFileName { get; set; } = "";
 
 	[XmlElement("password")]
 	public string Password { get; set; } = "";
-
-	[XmlElement("id", IsNullable = true)]
-	public string? Id { get; set; }
 
 	[XmlArray("urls", IsNullable = true)]
 	[XmlArrayItem("url")]

@@ -5,7 +5,6 @@ namespace SecureLookup.Commands;
 
 internal class AddCommandParameter
 {
-	[ParameterAlias("n")]
 	[ParameterDescription("Name of the entry; Entry with same name will be overwritten")]
 	[MandatoryParameter]
 	public string Name { get; set; } = "";
@@ -28,7 +27,7 @@ internal class AddCommandParameter
 	public string PasswordDictionary { get; set; } = "SpecialAlphaNumeric";
 
 	[ParameterAlias("Pass", "PSW", "PW")]
-	[ParameterDescription("User-specified file encryption password; character '|' is disallowed due its usage as separator")]
+	[ParameterDescription("Use specific archive encryption password; character '|' is disallowed due its usage as separator")]
 	public string? Password { get; set; }
 
 	[ParameterAlias("ANameLen", "ALen", "AL")]
@@ -62,14 +61,14 @@ internal class AddCommandParameter
 	public bool NoArchive { get; set; }
 
 	[ParameterAlias("AppendTo", "Append")]
-	[ParameterDescription(@"INSTEAD OF RUNNING ARCHIVER(Implicit '-NoA' switch), Append the generated(or specified) informations to specified file to support external archiving tools, in following format: <originalFileName>:<archiveFileName>:<password>
+	[ParameterDescription(@"INSTEAD OF RUNNING ARCHIVER(Implicit '-NoArchive' switch), Append the generated(or specified) informations to specified file to support external archiving tools, in following format: <originalFileName>:<archiveFileName>:<password>
 WARNING: You *MUST* run external archiving tools to archive your files")]
 	public string? AppendLogTo { get; set; }
 }
 
 internal class AddCommand : AbstractCommand
 {
-	public override string Description => "Add a new entry to database.";
+	public override string Description => "Add a new entry to database and run archiver to archive specified file or folder.";
 
 	public override string HelpMessage => ParameterSerializer.GetHelpMessage<AddCommandParameter>();
 
@@ -109,7 +108,7 @@ internal class AddCommand : AbstractCommand
 		if (string.IsNullOrWhiteSpace(param.ArchiveRepository))
 		{
 			dest = isFile ? Path.GetDirectoryName(srcPath) : (new DirectoryInfo(srcPath).Parent?.FullName);
-			Console.WriteLine("Using original file directory as Archive repository directory");
+			Console.WriteLine("Using original file directory as Archive repository directory: " + dest);
 		}
 		else
 		{
@@ -130,7 +129,7 @@ internal class AddCommand : AbstractCommand
 		{
 			Name = name,
 			OriginalFileName = srcFileName, // Path is relative to database path
-			EncryptedFileName = newName,
+			ArchiveFileName = newName,
 			Password = password,
 			Urls = param.Urls?.Split(param.UrlSeparator).ToList() ?? duplicate?.Urls,
 			Notes = param.Notes?.Split(param.NoteSeparator).ToList() ?? duplicate?.Notes

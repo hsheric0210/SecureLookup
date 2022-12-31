@@ -34,6 +34,7 @@ internal class HelpCommand : AbstractCommand
 				builder.Append("  * ").Append(cmd.Name).Append("    - ").AppendLine(cmd.Description);
 
 			Console.WriteLine(builder.ToString());
+			Console.WriteLine("help -Command=<command name> to see command-specific help message");
 		}
 		else
 		{

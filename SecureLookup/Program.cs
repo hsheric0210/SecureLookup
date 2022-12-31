@@ -25,12 +25,10 @@ public class ProgramParameter
 	[ParameterDescription("Disable the main loop. The program will immediately exit after executing the command specified by '-command' parameter.")]
 	public bool? DisableLoop { get; set; }
 
-	// TODO
 	[ParameterAlias("batch", "bf")]
 	[ParameterDescription("Execute each lines of specified file as command AND EXIT. Remember to append 'save' at the last line to save all changes.")]
 	public string? BatchFile { get; set; }
 
-	// TODO
 	[ParameterAlias("export", "ex")]
 	[ParameterDescription("Export all entries to specified file AND EXIT.")]
 	public string? ExportFile { get; set; }
@@ -61,14 +59,46 @@ public class Program
 			param.Database,
 			param.Password,
 			param.DisableLoop != true);
-		instance.Start();
+
+		if (!string.IsNullOrEmpty(param.ExportFile))
+		{
+			try
+			{
+				instance.ExportDecrypted(param.ExportFile);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Failed to export to: " + param.ExportFile);
+				Console.WriteLine(ex);
+			}
+			return;
+		}
+
+		if (!string.IsNullOrWhiteSpace(param.BatchFile) && new FileInfo(param.BatchFile).Exists)
+		{
+			IList<string> lines;
+			try
+			{
+				lines = File.ReadAllLines(param.BatchFile);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Failed to read the batch file: " + param.BatchFile);
+				Console.WriteLine(ex);
+				Environment.Exit(1);
+				return;
+			}
+
+			foreach (var line in lines)
+				instance.Execute(line);
+			return;
+		}
 
 		if (!string.IsNullOrWhiteSpace(param.Command))
 		{
-			// command by parameter is separated by '+' character
-			var pieces = param.Command.SplitOutsideQuotes(' ');
-			instance.Execute(pieces[0], pieces.Skip(1).ToArray());
+			instance.Execute(param.Command);
 		}
+		instance.Start();
 	}
 
 	public Program(string dbFile, string password, bool loop)
@@ -110,6 +140,14 @@ public class Program
 		CommandFactory = new CommandFactory(this);
 	}
 
+	private void ExportDecrypted(string dest)
+	{
+		using FileStream stream = File.Open(dest, FileMode.Create, FileAccess.Write, FileShare.Read);
+		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true, Encoding = new UTF8Encoding(false) });
+		var serializer = new XmlSerializer(typeof(DbInnerRoot));
+		serializer.Serialize(xw, Db);
+	}
+
 	private static ConfigRoot LoadConfig()
 	{
 		using FileStream stream = File.Open(ConfigFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -120,7 +158,7 @@ public class Program
 	private static void WriteDefaultConfig(ConfigRoot config)
 	{
 		using FileStream stream = File.Open(ConfigFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true });
+		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true, Encoding = new UTF8Encoding(false) });
 		var serializer = new XmlSerializer(typeof(ConfigRoot));
 		serializer.Serialize(xw, config);
 	}
@@ -152,6 +190,12 @@ public class Program
 		loop = false;
 		if (!discard && EncryptedDb.Dirty)
 			SaveDb();
+	}
+
+	private void Execute(string line)
+	{
+		var pieces = line.SplitOutsideQuotes(' ');
+		Execute(pieces[0], pieces.Skip(1).ToArray());
 	}
 
 	private void Execute(string cmdString, string[] args)

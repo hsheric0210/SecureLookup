@@ -50,8 +50,8 @@ public class DbEncrypted
 		{
 			using var xw = XmlWriter.Create(fs, new XmlWriterSettings
 			{
-				Encoding = Encoding.UTF8,
-				Indent = true
+				Indent = true,
+				Encoding = new UTF8Encoding(false)
 			});
 			serializer.Serialize(xw, outer);
 		}

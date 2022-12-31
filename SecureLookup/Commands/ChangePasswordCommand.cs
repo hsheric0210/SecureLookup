@@ -4,7 +4,7 @@ namespace SecureLookup.Commands;
 internal class ChangePasswordCommandParameter
 {
 	[ParameterAlias("pass", "psw", "pw", "p")]
-	[ParameterDescription($"The new database password; only '${ChangePasswordCommand.AllowedChars}' characters allowed.")]
+	[ParameterDescription("The new database password; only following characters allowed: " + ChangePasswordCommand.AllowedChars)]
 	[MandatoryParameter]
 	public string Password { get; set; } = "";
 }
@@ -15,7 +15,7 @@ internal class ChangePasswordCommand : AbstractCommand
 
 	public override string Description => "Changes the database password.";
 
-	public override string HelpMessage => ParameterSerializer.GetHelpMessage<ChangePasswordCommand>();
+	public override string HelpMessage => ParameterSerializer.GetHelpMessage<ChangePasswordCommandParameter>();
 
 
 	public ChangePasswordCommand(Program instance) : base(instance, "changepassword")

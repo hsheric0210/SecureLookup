@@ -45,11 +45,10 @@ internal static class ParameterSerializer
 		return true;
 	}
 
-	public static string GetHelpMessage<T>(bool placeholder = true)
+	public static string GetHelpMessage<T>(string? customHeader = null)
 	{
 		var builder = new StringBuilder();
-		if (placeholder)
-			builder.AppendLine("Available parameters:");
+		builder.AppendLine(customHeader ?? "Available parameters:");
 
 		// Process properties
 		foreach (PropertyInfo prop in typeof(T).GetProperties())
