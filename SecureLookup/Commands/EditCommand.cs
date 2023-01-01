@@ -63,7 +63,7 @@ internal class EditCommand : AbstractFilterCommand
 			return false;
 		}
 
-		Instance.EncryptedDb.MarkDirty();
+		Instance.Database.MarkDirty();
 
 		Console.WriteLine($"*** Total {entries.Count} entries selected.");
 		if (entries.Count > 1)

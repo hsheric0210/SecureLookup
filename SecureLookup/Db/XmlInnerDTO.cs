@@ -1,6 +1,6 @@
 ﻿using System.Xml.Serialization;
 
-namespace SecureLookup;
+namespace SecureLookup.Db;
 
 [XmlRoot("root")]
 public class DbInnerRoot

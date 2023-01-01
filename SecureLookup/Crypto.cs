@@ -1,5 +1,4 @@
 ﻿using Konscious.Security.Cryptography;
-using System.Security.Cryptography;
 
 namespace SecureLookup;
 internal static class Crypto

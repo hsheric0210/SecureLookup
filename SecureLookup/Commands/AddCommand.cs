@@ -134,7 +134,7 @@ internal class AddCommand : AbstractCommand
 			Urls = param.Urls?.Split(param.UrlSeparator).ToList() ?? duplicate?.Urls,
 			Notes = param.Notes?.Split(param.NoteSeparator).ToList() ?? duplicate?.Notes
 		});
-		Instance.EncryptedDb.MarkDirty();
+		Instance.Database.MarkDirty();
 
 		Console.WriteLine("Entry added. Don't forget to save the database!");
 

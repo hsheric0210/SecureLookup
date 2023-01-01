@@ -12,7 +12,7 @@ internal class ClearCacheCommand : AbstractCommand
 	protected override bool Execute(string[] args)
 	{
 		Instance.Db.GeneratedFileNames.Clear();
-		Instance.EncryptedDb.MarkDirty();
+		Instance.Database.MarkDirty();
 		return true;
 	}
 }

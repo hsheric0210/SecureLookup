@@ -40,11 +40,10 @@ public class Program
 
 	private bool loop;
 	private readonly string dbFileName;
-	internal Database EncryptedDb { get; private set; }
+	internal Database Database { get; }
 
 	public string DbFile { get; set; }
 	public CommandFactory CommandFactory { get; }
-	public DbInnerRoot Db { get; }
 	public ConfigRoot Config { get; }
 
 	public static void Main(params string[] args)
@@ -64,11 +63,11 @@ public class Program
 		{
 			try
 			{
-				instance.ExportDecrypted(param.ExportFile);
+				instance.Database.Export(param.ExportFile);
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine("Failed to export to: " + param.ExportFile);
+				Console.WriteLine("Failed to export as: " + param.ExportFile);
 				Console.WriteLine(ex);
 			}
 			return;
@@ -122,12 +121,7 @@ public class Program
 		{
 			DbFile = Path.GetFullPath(dbFile);
 			dbFileName = Path.GetFileName(DbFile);
-			EncryptedDb = new Database(dbFile, Encoding.UTF8.GetBytes(password));
-			Db = new DbInnerRoot();
-			if (new FileInfo(dbFile).Exists)
-				Db = EncryptedDb.Load();
-			else
-				SaveDb();
+			Database = new Database(dbFile, Encoding.UTF8.GetBytes(password));
 		}
 		catch (Exception ex)
 		{
@@ -138,14 +132,6 @@ public class Program
 
 		this.loop = loop;
 		CommandFactory = new CommandFactory(this);
-	}
-
-	private void ExportDecrypted(string dest)
-	{
-		using FileStream stream = File.Open(dest, FileMode.Create, FileAccess.Write, FileShare.Read);
-		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true, Encoding = new UTF8Encoding(false) });
-		var serializer = new XmlSerializer(typeof(DbInnerRoot));
-		serializer.Serialize(xw, Db);
 	}
 
 	private static ConfigRoot LoadConfig()
@@ -169,7 +155,7 @@ public class Program
 	{
 		try
 		{
-			EncryptedDb.Save();
+			Database.Save();
 		}
 		catch (Exception ex)
 		{
@@ -181,7 +167,7 @@ public class Program
 	public void Exit(bool discard)
 	{
 		loop = false;
-		if (!discard && EncryptedDb.Dirty)
+		if (!discard && Database.Dirty)
 			SaveDb();
 	}
 

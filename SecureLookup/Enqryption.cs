@@ -4,18 +4,18 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace SecureLookup;
-internal class Encryption
+internal class Enqryption
 {
 	private readonly byte[] derivedKey;
 	internal byte[] Salt { get; }
 
-	public Encryption(byte[] password, byte[] salt)
+	public Enqryption(byte[] password, byte[] salt)
 	{
 		Salt = salt;
 		derivedKey = Crypto.DeriveKey(password, salt, 48); // 48 = 32(key) + 16(iv)
 	}
 
-	public Encryption(byte[] password) : this(password, RandomNumberGenerator.GetBytes(16))
+	public Enqryption(byte[] password) : this(password, RandomNumberGenerator.GetBytes(16))
 	{
 	}
 

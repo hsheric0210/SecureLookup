@@ -28,7 +28,7 @@ internal class DropCommand : AbstractFilterCommand
 		}
 
 		var builder = new StringBuilder();
-		Instance.EncryptedDb.MarkDirty();
+		Instance.Database.MarkDirty();
 		foreach (DbEntry entry in entries)
 		{
 			AppendEntry(builder, entry);
