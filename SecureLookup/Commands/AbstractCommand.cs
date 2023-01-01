@@ -1,9 +1,13 @@
-﻿namespace SecureLookup.Commands;
+﻿using SecureLookup.Db;
+
+namespace SecureLookup.Commands;
 public abstract class AbstractCommand
 {
 	protected Program Instance { get; }
 
 	internal string Name { get; }
+
+	public DbInnerRoot DbRoot => Instance.Database.InnerRoot;
 
 	public abstract string Description { get; }
 

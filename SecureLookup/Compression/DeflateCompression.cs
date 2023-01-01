@@ -10,8 +10,23 @@ internal class DeflateCompression : AbstractCompression
 	{
 	}
 
-	public override Stream Compress(Stream outStream, IReadOnlyDictionary<string, string> props) => new DeflateStream(outStream, SharpCompress.Compressors.CompressionMode.Compress, (CompressionLevel)int.Parse(props[CompressionLevelProp]), Encoding.UTF8);
+	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
+	{
+		using var inStream = new MemoryStream(uncompressed);
+		using var compress = new DeflateStream(inStream, SharpCompress.Compressors.CompressionMode.Compress, (CompressionLevel)int.Parse(props[CompressionLevelProp]), Encoding.UTF8);
+		using var outStream = new MemoryStream();
+		compress.CopyTo(outStream);
+		return outStream.ToArray();
+	}
 
-	public override Stream Decompress(Stream inStream, IReadOnlyDictionary<string, string> props) => new DeflateStream(inStream, SharpCompress.Compressors.CompressionMode.Compress, (CompressionLevel)int.Parse(props[CompressionLevelProp]), Encoding.UTF8);
+	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
+	{
+		using var inStream = new MemoryStream(compressed);
+		using var decompress = new DeflateStream(inStream, SharpCompress.Compressors.CompressionMode.Decompress, (CompressionLevel)int.Parse(props[CompressionLevelProp]), Encoding.UTF8);
+		using var outStream = new MemoryStream();
+		decompress.CopyTo(outStream);
+		return outStream.ToArray();
+	}
+
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props) => props.ContainsKey(CompressionLevelProp) && int.TryParse(props[CompressionLevelProp], out _);
 }

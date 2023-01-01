@@ -1,4 +1,5 @@
-﻿using SecureLookup.Encryption;
+﻿using SecureLookup.Compression;
+using SecureLookup.Encryption;
 using SecureLookup.Hash;
 using SecureLookup.PasswordHash;
 using System.Security.Cryptography;
@@ -21,7 +22,7 @@ public static class DatabaseSaveExtension
 		DbOuterRoot outer = database.OuterRoot;
 		RandomizeParameters(outer);
 		var key = SecondaryPasswordHash(outer, database.PasswordHash);
-		database.OuterRoot.Encryption = EncryptAndHash(outer, SerializeInner(database.InnerRoot), key);
+		database.OuterRoot.Encryption = EncryptAndHash(outer, CompressInner(outer.Compression, SerializeInner(database.InnerRoot)), key);
 		SerializeAndWriteOuter(database.OuterRoot, database.Source);
 	}
 
@@ -37,6 +38,21 @@ public static class DatabaseSaveExtension
 		catch (Exception ex)
 		{
 			throw new AggregateException("Inner serialization failure", ex);
+		}
+	}
+
+	private static byte[] CompressInner(DbCompressionEntry entry, byte[] inner)
+	{
+		try
+		{
+			Console.WriteLine("Uncompressed: " + inner.Length);
+			var compressed = CompressionFactory.Compress(entry, inner);
+			Console.WriteLine("Compressed: " + compressed.Length);
+			return compressed;
+		}
+		catch (Exception ex)
+		{
+			throw new AggregateException("Inner compression failure", ex);
 		}
 	}
 
@@ -69,7 +85,7 @@ public static class DatabaseSaveExtension
 	{
 		try
 		{
-			var encrypted = EncryptionFactory.Encrypt(outer.Encryption.AlgorithmName, plaintext, key, out byte[] data);
+			DbEncryptionEntry encrypted = EncryptionFactory.Encrypt(outer.Encryption.AlgorithmName, plaintext, key, out byte[] data);
 			outer.Hash.HashBytes = HashFactory.Hash(outer.Hash.AlgorithmName, data);
 			return encrypted;
 		}

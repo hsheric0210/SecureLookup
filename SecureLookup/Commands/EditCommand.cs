@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using SecureLookup.Db;
+using System.Text;
 
 namespace SecureLookup.Commands;
 

@@ -3,7 +3,7 @@ internal class DatabaseCreationParameter
 {
 	[ParameterAlias("phashalg")]
 	[ParameterDescription("Primary password hashing algorithm")]
-	public string PrimaryPasswordHashingAlgorithm { get; set; } = "PBKDF-HMAC-SHA512";
+	public string PrimaryPasswordHashingAlgorithm { get; set; } = "PBKDF2-HMAC-SHA512";
 
 	[ParameterAlias("phashprop")]
 	[ParameterDescription("Primary password hashing properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
@@ -19,15 +19,15 @@ internal class DatabaseCreationParameter
 
 	[ParameterAlias("shashprop")]
 	[ParameterDescription("Secondary password hashing properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
-	public string SecondaryPasswordHashingProperties { get; set; } = "iterations=64;memorySize=131072;parallelism=12";
+	public string SecondaryPasswordHashingProperties { get; set; } = "iterations=64;memorySizeKb=131072;parallelism=12";
 
 	[ParameterAlias("compressalg", "calg")]
 	[ParameterDescription("Database compression algorithm")]
-	public string DatabaseCompressionAlgorithm { get; set; } = "LZMA";
+	public string DatabaseCompressionAlgorithm { get; set; } = "Deflate";
 
 	[ParameterAlias("compressprop", "cprop")]
 	[ParameterDescription("Database compression properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
-	public string DatabaseCompressionProperties { get; set; } = "";
+	public string DatabaseCompressionProperties { get; set; } = "x=9";
 
 	[ParameterAlias("dhashalg")]
 	[ParameterDescription("Database hashing algorithm (for integrity check)")]

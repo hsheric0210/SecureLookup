@@ -1,4 +1,5 @@
 ﻿using SecureLookup.Commands;
+using SecureLookup.Db;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -40,7 +41,7 @@ public class Program
 
 	private bool loop;
 	private readonly string dbFileName;
-	internal Database Database { get; }
+	public Database Database { get; }
 
 	public string DbFile { get; set; }
 	public CommandFactory CommandFactory { get; }
@@ -57,7 +58,8 @@ public class Program
 		var instance = new Program(
 			param.Database,
 			param.Password,
-			param.DisableLoop != true);
+			param.DisableLoop != true,
+			args);
 
 		if (!string.IsNullOrEmpty(param.ExportFile))
 		{
@@ -100,7 +102,7 @@ public class Program
 		instance.Start();
 	}
 
-	public Program(string dbFile, string password, bool loop)
+	public Program(string dbFile, string password, bool loop, params string[] args)
 	{
 		try
 		{
@@ -121,7 +123,14 @@ public class Program
 		{
 			DbFile = Path.GetFullPath(dbFile);
 			dbFileName = Path.GetFileName(DbFile);
-			Database = new Database(dbFile, Encoding.UTF8.GetBytes(password));
+
+			Database? database = new FileInfo(DbFile).Exists
+				? DatabaseLoader.Run(DbFile, Encoding.UTF8.GetBytes(password))
+				: DatabaseCreator.Create(dbFile, Encoding.UTF8.GetBytes(password), args);
+
+			if (database is null)
+				return;
+			Database = database;
 		}
 		catch (Exception ex)
 		{

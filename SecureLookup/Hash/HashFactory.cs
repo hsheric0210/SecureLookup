@@ -32,11 +32,12 @@ public static class HashFactory
 	/// <param name="entry">The stored hash, in XML DTO form</param>
 	/// <param name="data">Data to compare hash</param>
 	/// <returns><c>true</c> if both hash equals, <c>false</c> if hash mismatched</returns>
-	public static bool Verify(DbHashEntry entry, byte[] data)
+	public static bool Verify(DbHashEntry entry, byte[] data, out byte[] hash)
 	{
-		AbstractHash hash = Lookup(entry.AlgorithmName);
+		AbstractHash hasher = Lookup(entry.AlgorithmName);
 		var expected = Convert.FromHexString(entry.Hash);
-		return hash.Hash(data).SequenceEqual(expected);
+		hash = hasher.Hash(data);
+		return hash.SequenceEqual(expected);
 	}
 
 	public static AbstractHash Lookup(string algorithmName) => registeredHashes.FirstOrDefault(h => h.AlgorithmName.Equals(algorithmName, StringComparison.OrdinalIgnoreCase)) ?? throw new NotSupportedException("Unknown hash algorithm: " + algorithmName);

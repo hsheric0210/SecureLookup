@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using SecureLookup.Db;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
@@ -47,7 +48,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		var all = targetChar == 'a';
 		try
 		{
-			return ExecuteForEntries(args, Instance.Db.Entries.Where(entry =>
+			return ExecuteForEntries(args, DbRoot.Entries.Where(entry =>
 			{
 				if ((all || targetChar == 'n') && pred(entry.Name))
 					return true;

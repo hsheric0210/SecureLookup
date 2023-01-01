@@ -23,7 +23,7 @@ public class Database
 	/// <summary>
 	/// The database source file path
 	/// </summary>
-	public string Source { get; }
+	public string Source { get; set; }
 
 	/// <summary>
 	/// Is this database dirty? (modified)
@@ -56,6 +56,6 @@ public class Database
 		using FileStream stream = File.Open(destinationFile, FileMode.Create, FileAccess.Write, FileShare.Read);
 		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true, Encoding = new UTF8Encoding(false) });
 		var serializer = new XmlSerializer(typeof(DbInnerRoot));
-		serializer.Serialize(xw, Inner);
+		serializer.Serialize(xw, InnerRoot);
 	}
 }

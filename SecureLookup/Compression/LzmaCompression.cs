@@ -2,6 +2,24 @@
 using System.Buffers.Binary;
 
 namespace SecureLookup.Compression;
+/*
+ FIXME: Decompression error
+d:\Repo\SecureLookup\SecureLookup\bin\Debug\net6.0>securelookup -db=test_LZMA -calg=LZMA -cprop="d=16777216;mf=bt4;fb=64;lc=4;lp=0;pb=2" -pass=abcd
+Failed to load the database file. Maybe mismatched key?
+System.AggregateException: Decompression failure (Data Error)
+ ---> SharpCompress.Compressors.LZMA.DataErrorException: Data Error
+   at SharpCompress.Compressors.LZMA.Decoder.Code(Int32 dictionarySize, OutWindow outWindow, Decoder rangeDecoder)
+   at SharpCompress.Compressors.LZMA.LzmaStream.Read(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.Stream.CopyTo(Stream destination, Int32 bufferSize)
+   at System.IO.Stream.CopyTo(Stream destination)
+   at SecureLookup.Compression.LzmaCompression.Decompress(Byte[] compressed, IReadOnlyDictionary`2 props) in D:\Repo\SecureLookup\SecureLookup\Compression\LzmaCompression.cs:line 42
+   at SecureLookup.Compression.CompressionFactory.Decompress(DbCompressionEntry entry, Byte[] compressed) in D:\Repo\SecureLookup\SecureLookup\Compression\CompressionFactory.cs:line 29
+   at SecureLookup.Db.DatabaseLoader.Decompress(DbCompressionEntry entry, Byte[] compressed) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 81
+   --- End of inner exception stack trace ---
+   at SecureLookup.Db.DatabaseLoader.Decompress(DbCompressionEntry entry, Byte[] compressed) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 85
+   at SecureLookup.Db.DatabaseLoader.Run(String source, Byte[] password) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 21
+   at SecureLookup.Program..ctor(String dbFile, String password, Boolean loop, String[] args) in D:\Repo\SecureLookup\SecureLookup\Program.cs:line 127
+ */
 internal class LzmaCompression : AbstractCompression
 {
 	protected const string DictionarySizeProp = "d";
@@ -15,24 +33,33 @@ internal class LzmaCompression : AbstractCompression
 	{
 	}
 
-	public override Stream Compress(Stream outStream, IReadOnlyDictionary<string, string> props)
+	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		return new LzmaStream(CreateEncoderProperties(
+		using var inStream = new MemoryStream(uncompressed);
+		using var outStream = new MemoryStream();
+		using var compress = new LzmaStream(CreateEncoderProperties(
 			int.Parse(props[DictionarySizeProp]),
 			props[MatchFinderProp],
 			int.Parse(props[NumFastBytesProp]),
 			int.Parse(props[LiteralContextBitsProp]),
 			int.Parse(props[LiteralPosBitsProp]),
 			int.Parse(props[PosStateBitsProp])), false, outStream);
+		inStream.CopyTo(compress);
+		return outStream.ToArray();
 	}
 
-	public override Stream Decompress(Stream inStream, IReadOnlyDictionary<string, string> props)
+	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
 	{
-		return new LzmaStream(CreateDecoderProperties(
+		using var inStream = new MemoryStream(compressed);
+		using var decompress = new LzmaStream(CreateDecoderProperties(
 			uint.Parse(props[DictionarySizeProp]),
 			int.Parse(props[LiteralContextBitsProp]),
 			int.Parse(props[LiteralPosBitsProp]),
 			int.Parse(props[PosStateBitsProp])), inStream);
+		using var outStream = new MemoryStream();
+		decompress.CopyTo(outStream);
+		return outStream.ToArray();
+
 	}
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props)

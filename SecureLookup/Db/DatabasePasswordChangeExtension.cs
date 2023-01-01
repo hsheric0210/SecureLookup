@@ -27,7 +27,7 @@ public static class DatabasePasswordChangeExtension
 
 	private static void RandomizeAnything(this DbOuterRoot outer)
 	{
-		outer.PrimaryPasswordHashing.SaltBytes = RandomNumberGenerator.GetBytes(PasswordHashFactory.GetSaltSize(outer.PrimaryPasswordHashing));
+		outer.PrimaryPasswordHashing.SaltBytes = RandomNumberGenerator.GetBytes(PasswordHashFactory.Lookup(outer.PrimaryPasswordHashing.AlgorithmName).SaltSize);
 		outer.PrimaryPasswordHashSize = RandomNumberGenerator.GetInt32(32, 129);
 	}
 }

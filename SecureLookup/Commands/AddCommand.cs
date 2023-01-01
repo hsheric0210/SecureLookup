@@ -1,4 +1,5 @@
-﻿using StringTokenFormatter;
+﻿using SecureLookup.Db;
+using StringTokenFormatter;
 using System.Diagnostics;
 
 namespace SecureLookup.Commands;
@@ -125,7 +126,7 @@ internal class AddCommand : AbstractCommand
 		DbEntry? duplicate = DeleteDuplicateNameEntries(name);
 
 		var newName = GenerateNewFileName(param.ArchiveNameLength, dest, param.ArchiveNameDictionary);
-		Instance.Db.Entries.Add(new DbEntry()
+		DbRoot.Entries.Add(new DbEntry()
 		{
 			Name = name,
 			OriginalFileName = srcFileName, // Path is relative to database path
@@ -164,10 +165,10 @@ internal class AddCommand : AbstractCommand
 		string newName;
 		do
 			newName = RandomStringGenerator.RandomString(nameLength, dict);
-		while (Instance.Db.GeneratedFileNames.Contains(newName) || new FileInfo(Path.Combine(destFolder, newName)).Exists);
+		while (DbRoot.GeneratedFileNames.Contains(newName) || new FileInfo(Path.Combine(destFolder, newName)).Exists);
 
 		Console.WriteLine("New filename generated: " + newName);
-		Instance.Db.GeneratedFileNames.Add(newName);
+		DbRoot.GeneratedFileNames.Add(newName);
 		return newName;
 	}
 
@@ -175,8 +176,8 @@ internal class AddCommand : AbstractCommand
 	{
 		bool predicate(DbEntry entry) => string.Equals(name, entry.Name, StringComparison.OrdinalIgnoreCase);
 
-		DbEntry? first = Instance.Db.Entries.Find(predicate);
-		var deleted = Instance.Db.Entries.RemoveAll(predicate);
+		DbEntry? first = DbRoot.Entries.Find(predicate);
+		var deleted = DbRoot.Entries.RemoveAll(predicate);
 		if (deleted > 0)
 			Console.WriteLine($"Overwriting {deleted} entry with same name '{name}'.");
 		return first;

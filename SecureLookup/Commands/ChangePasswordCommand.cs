@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using SecureLookup.Db;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SecureLookup.Commands;
 internal class ChangePasswordCommandParameter
@@ -7,6 +9,10 @@ internal class ChangePasswordCommandParameter
 	[ParameterDescription("The new database password; only following characters allowed: " + ChangePasswordCommand.AllowedChars)]
 	[MandatoryParameter]
 	public string Password { get; set; } = "";
+
+	[ParameterAlias("encryption", "enc")]
+	[ParameterDescription("New database encryption algorithm")]
+	public string? EncryptionAlgorithm { get; set; }
 }
 
 internal class ChangePasswordCommand : AbstractCommand
@@ -33,7 +39,7 @@ internal class ChangePasswordCommand : AbstractCommand
 			Console.WriteLine("Password contains unsupported characters.");
 			Console.WriteLine("Allowed characters: " + AllowedChars);
 		}
-		Instance.ChangePassword(newPassword);
+		Instance.Database.ChangePassword(Encoding.UTF8.GetBytes(newPassword), param.EncryptionAlgorithm);
 		return true;
 	}
 }

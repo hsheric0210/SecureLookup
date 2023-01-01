@@ -9,12 +9,16 @@ public static class DatabaseCreator
 	public static Database? Create(string destination, byte[] password, params string[] args)
 	{
 		if (!ParameterDeserializer.TryParse(out DatabaseCreationParameter param, args))
+		{
+			Console.WriteLine(ParameterDeserializer.GetHelpMessage<DatabaseCreationParameter>());
 			return null;
+		}
 		DbOuterRoot outer = PrepareOuter(param);
 
 		var pwHash = outer.PrimaryHashPassword(password);
 		var db = new Database()
 		{
+			Source = destination,
 			OuterRoot = outer,
 			InnerRoot = new DbInnerRoot(),
 			PasswordHash = pwHash
@@ -43,10 +47,9 @@ public static class DatabaseCreator
 		return outer;
 	}
 
-	private static DbPasswordHashingEntry CreatePasswordHashing(string algorithmName, string? props)
+	private static DbPasswordHashingEntry CreatePasswordHashing(string algorithmName, string props)
 	{
 		AbstractPasswordHash hash = PasswordHashFactory.Lookup(algorithmName);
-		if (props.)
 		if (!hash.IsPropertiesValid(PropertiesUtils.Deserialize(props)))
 			throw new ArgumentException("Invalid properties: " + props);
 		return new DbPasswordHashingEntry

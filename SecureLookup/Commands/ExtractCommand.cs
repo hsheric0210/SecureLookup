@@ -1,4 +1,5 @@
-﻿using StringTokenFormatter;
+﻿using SecureLookup.Db;
+using StringTokenFormatter;
 using System.Diagnostics;
 using System.Text;
 

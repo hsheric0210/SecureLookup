@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using SecureLookup.Db;
+using System.Text;
 
 namespace SecureLookup.Commands;
 
@@ -32,7 +33,7 @@ internal class DropCommand : AbstractFilterCommand
 		foreach (DbEntry entry in entries)
 		{
 			AppendEntry(builder, entry);
-			Instance.Db.Entries.Remove(entry);
+			DbRoot.Entries.Remove(entry);
 		}
 		Console.WriteLine(builder.ToString());
 		return true;

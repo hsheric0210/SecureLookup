@@ -17,7 +17,7 @@ public static class PasswordHashingExtension
 		return outer.SecondaryPasswordHashing.HashPassword(
 			"Secondary",
 			primaryHashed,
-			EncryptionFactory.GetKeySize(outer.Encryption));
+			EncryptionFactory.Lookup(outer.Encryption.AlgorithmName).KeySize);
 	}
 
 	private static byte[] HashPassword(this DbPasswordHashingEntry entry, string prefix, byte[] data, int hashLength)

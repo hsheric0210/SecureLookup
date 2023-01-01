@@ -1,6 +1,6 @@
-﻿using SecureLookup.Encryption;
+﻿using SecureLookup.Compression;
+using SecureLookup.Encryption;
 using SecureLookup.Hash;
-using SimpleBase;
 using System.Xml.Serialization;
 
 namespace SecureLookup.Db;
@@ -18,7 +18,7 @@ public class DatabaseLoader
 		DbOuterRoot outer = LoadOuter(source);
 		CheckDbIntegrity(outer);
 		var primaryHashed = outer.PrimaryHashPassword(password);
-		DbInnerRoot inner = DeserializeInner(Decrypt(outer, outer.SecondaryHashPassword(primaryHashed)));
+		DbInnerRoot inner = DeserializeInner(Decompress(outer.Compression, Decrypt(outer, outer.SecondaryHashPassword(primaryHashed))));
 
 		return new Database()
 		{
@@ -47,8 +47,7 @@ public class DatabaseLoader
 	{
 		try
 		{
-			var calculated = HashFactory.Hash(outer.Hash.AlgorithmName, outer.Encryption.DataBytes);
-			if (!HashFactory.Verify(outer.Hash, calculated))
+			if (!HashFactory.Verify(outer.Hash, outer.Encryption.DataBytes, out byte[] calculated))
 				throw new AggregateException($"Hash mismatch: algorithm={outer.Hash.AlgorithmName}, expected={outer.Hash.Hash}, calculated={Convert.ToHexString(calculated)}");
 		}
 		catch (Exception ex)
@@ -72,6 +71,18 @@ public class DatabaseLoader
 		catch (Exception ex)
 		{
 			throw new AggregateException("Decryption failure", ex);
+		}
+	}
+
+	private static byte[] Decompress(DbCompressionEntry entry, byte[] compressed)
+	{
+		try
+		{
+			return CompressionFactory.Decompress(entry, compressed);
+		}
+		catch(Exception ex)
+		{
+			throw new AggregateException("Decompression failure", ex);
 		}
 	}
 
