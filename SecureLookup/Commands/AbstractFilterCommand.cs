@@ -30,11 +30,11 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 
 	protected virtual string AdditionalHelpMessage { get; } = "";
 
-	public override string HelpMessage => ParameterSerializer.GetHelpMessage<FilterCommandParameter>("Filter parameters") + Environment.NewLine + AdditionalHelpMessage;
+	public override string HelpMessage => ParameterDeserializer.GetHelpMessage<FilterCommandParameter>("Filter parameters") + Environment.NewLine + AdditionalHelpMessage;
 
 	protected override bool Execute(string[] args)
 	{
-		if (!ParameterSerializer.TryParse(out FilterCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out FilterCommandParameter param, args))
 			return false;
 		Predicate<string>? pred = CreatePredicate(param.Mode, param.Keyword, args.HasSwitch("cs"));
 		if (pred is null)

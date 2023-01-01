@@ -19,7 +19,7 @@ internal class ExitCommand : AbstractCommand
 
 	protected override bool Execute(string[] args)
 	{
-		if (!ParameterSerializer.TryParse(out ExitCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out ExitCommandParameter param, args))
 			return false;
 
 		Instance.Exit(param.Discard == true);

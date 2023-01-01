@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 
 namespace SecureLookup;
 
@@ -9,6 +8,10 @@ public class DbInnerRoot
 	[XmlArray("entries")]
 	[XmlArrayItem("entry")]
 	public List<DbEntry> Entries { get; set; } = new List<DbEntry>();
+
+	[XmlArray("generatedFileNames")]
+	[XmlArrayItem("fileName")]
+	public List<string> GeneratedFileNames { get; set; } = new List<string>();
 }
 
 public class DbEntry

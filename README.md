@@ -65,7 +65,7 @@ These are wrong
     <memsize>(int: KDF Memory block size)</memsize>
     <parallelism>(int: KDF Parallelism)</parallelism>
   </kdf>
-  <hash>(hex-string: SHA-3 Hash of encrypted data)</hash>
+  <hash>(hex-string: SHA3-512 Hash of encrypted data)</hash>
   <data>(base64-string: The encrypted inner database)</data>
 </encrypted>
 ```

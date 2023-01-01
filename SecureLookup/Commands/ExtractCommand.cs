@@ -27,7 +27,7 @@ internal class ExtractCommand : AbstractFilterCommand
 {
 	public override string Description => "Open specified archive file with specified unarchiver.";
 
-	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<OpenCommandParameter>("Extraction parameters");
+	protected override string AdditionalHelpMessage => ParameterDeserializer.GetHelpMessage<OpenCommandParameter>("Extraction parameters");
 
 	public ExtractCommand(Program instance) : base(instance, "extract")
 	{
@@ -35,7 +35,7 @@ internal class ExtractCommand : AbstractFilterCommand
 
 	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
-		if (!ParameterSerializer.TryParse(out OpenCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out OpenCommandParameter param, args))
 			return false;
 
 		var repo = param.ArchiveRepository;

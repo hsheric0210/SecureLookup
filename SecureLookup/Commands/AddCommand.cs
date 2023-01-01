@@ -70,7 +70,7 @@ internal class AddCommand : AbstractCommand
 {
 	public override string Description => "Add a new entry to database and run archiver to archive specified file or folder.";
 
-	public override string HelpMessage => ParameterSerializer.GetHelpMessage<AddCommandParameter>();
+	public override string HelpMessage => ParameterDeserializer.GetHelpMessage<AddCommandParameter>();
 
 	public AddCommand(Program instance) : base(instance, "add")
 	{
@@ -78,7 +78,7 @@ internal class AddCommand : AbstractCommand
 
 	protected override bool Execute(string[] args)
 	{
-		if (!ParameterSerializer.TryParse(out AddCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out AddCommandParameter param, args))
 			return false;
 
 		var password = param.Password;
@@ -159,14 +159,15 @@ internal class AddCommand : AbstractCommand
 		return true;
 	}
 
-	private static string GenerateNewFileName(int nameLength, string destFolder, string dict)
+	private string GenerateNewFileName(int nameLength, string destFolder, string dict)
 	{
 		string newName;
 		do
 			newName = RandomStringGenerator.RandomString(nameLength, dict);
-		while (new FileInfo(Path.Combine(destFolder, newName)).Exists); // Check if any file with same name already exists.
+		while (Instance.Db.GeneratedFileNames.Contains(newName) || new FileInfo(Path.Combine(destFolder, newName)).Exists);
 
 		Console.WriteLine("New filename generated: " + newName);
+		Instance.Db.GeneratedFileNames.Add(newName);
 		return newName;
 	}
 

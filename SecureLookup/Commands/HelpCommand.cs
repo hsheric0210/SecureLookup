@@ -17,12 +17,12 @@ internal class HelpCommand : AbstractCommand
 
 	public override string Description => "Lists all available commands, or prints the help message for specific command.";
 
-	public override string HelpMessage => ParameterSerializer.GetHelpMessage<HelpCommandParameter>();
+	public override string HelpMessage => ParameterDeserializer.GetHelpMessage<HelpCommandParameter>();
 
 
 	protected override bool Execute(string[] args)
 	{
-		if (!ParameterSerializer.TryParse(out HelpCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out HelpCommandParameter param, args))
 			return false;
 
 		AbstractCommand? command;

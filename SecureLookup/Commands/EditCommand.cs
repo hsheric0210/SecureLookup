@@ -38,7 +38,7 @@ internal class EditCommand : AbstractFilterCommand
 {
 	public override string Description => "Removes the entries matching the filter from the database.";
 
-	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<EditCommandParameter>("Edit parameters");
+	protected override string AdditionalHelpMessage => ParameterDeserializer.GetHelpMessage<EditCommandParameter>("Edit parameters");
 
 	public EditCommand(Program instance) : base(instance, "edit")
 	{
@@ -46,7 +46,7 @@ internal class EditCommand : AbstractFilterCommand
 
 	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
-		if (!ParameterSerializer.TryParse(out EditCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out EditCommandParameter param, args))
 			return false;
 
 		if (new List<string?>()

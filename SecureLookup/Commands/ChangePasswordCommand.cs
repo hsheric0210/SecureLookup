@@ -15,7 +15,7 @@ internal class ChangePasswordCommand : AbstractCommand
 
 	public override string Description => "Changes the database password.";
 
-	public override string HelpMessage => ParameterSerializer.GetHelpMessage<ChangePasswordCommandParameter>();
+	public override string HelpMessage => ParameterDeserializer.GetHelpMessage<ChangePasswordCommandParameter>();
 
 
 	public ChangePasswordCommand(Program instance) : base(instance, "changepassword")
@@ -24,7 +24,7 @@ internal class ChangePasswordCommand : AbstractCommand
 
 	protected override bool Execute(string[] args)
 	{
-		if (!ParameterSerializer.TryParse(out ChangePasswordCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out ChangePasswordCommandParameter param, args))
 			return false;
 
 		var newPassword = param.Password;

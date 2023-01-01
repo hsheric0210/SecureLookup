@@ -13,7 +13,7 @@ internal class DropCommand : AbstractFilterCommand
 {
 	public override string Description => "Removes the entries matching the filter from the database.";
 
-	protected override string AdditionalHelpMessage => ParameterSerializer.GetHelpMessage<DropCommandParameter>("Drop parameters");
+	protected override string AdditionalHelpMessage => ParameterDeserializer.GetHelpMessage<DropCommandParameter>("Drop parameters");
 
 	public DropCommand(Program instance) : base(instance, "drop")
 	{

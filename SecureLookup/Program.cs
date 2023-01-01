@@ -40,7 +40,7 @@ public class Program
 
 	private bool loop;
 	private readonly string dbFileName;
-	internal DbEncrypted EncryptedDb { get; private set; }
+	internal Database EncryptedDb { get; private set; }
 
 	public string DbFile { get; set; }
 	public CommandFactory CommandFactory { get; }
@@ -49,9 +49,9 @@ public class Program
 
 	public static void Main(params string[] args)
 	{
-		if (!ParameterSerializer.TryParse(out ProgramParameter param, args))
+		if (!ParameterDeserializer.TryParse(out ProgramParameter param, args))
 		{
-			Console.WriteLine(ParameterSerializer.GetHelpMessage<ProgramParameter>());
+			Console.WriteLine(ParameterDeserializer.GetHelpMessage<ProgramParameter>());
 			return;
 		}
 
@@ -122,7 +122,7 @@ public class Program
 		{
 			DbFile = Path.GetFullPath(dbFile);
 			dbFileName = Path.GetFileName(DbFile);
-			EncryptedDb = new DbEncrypted(dbFile, Encoding.UTF8.GetBytes(password));
+			EncryptedDb = new Database(dbFile, Encoding.UTF8.GetBytes(password));
 			Db = new DbInnerRoot();
 			if (new FileInfo(dbFile).Exists)
 				Db = EncryptedDb.Load();
@@ -163,20 +163,13 @@ public class Program
 		serializer.Serialize(xw, config);
 	}
 
-	public void ChangePassword(string newPassword)
-	{
-		var newOuter = new DbEncrypted(DbFile, Encoding.UTF8.GetBytes(newPassword));
-		newOuter.Save(Db);
-		EncryptedDb = newOuter;
-	}
-
 	private void Start() => MainLoop();
 
 	public void SaveDb()
 	{
 		try
 		{
-			EncryptedDb.Save(Db);
+			EncryptedDb.Save();
 		}
 		catch (Exception ex)
 		{
