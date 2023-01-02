@@ -1,39 +1,11 @@
 ﻿using SecureLookup.Commands;
 using SecureLookup.Db;
+using SecureLookup.Parameter;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
 namespace SecureLookup;
-
-public class ProgramParameter
-{
-	[ParameterAlias("db", "d")]
-	[ParameterDescription("The database file to use")]
-	[MandatoryParameter]
-	public string Database { get; set; } = "";
-
-	[ParameterAlias("pass", "psw", "pw", "p")]
-	[ParameterDescription("The password to open the database")]
-	[MandatoryParameter]
-	public string Password { get; set; } = "";
-
-	[ParameterAlias("cmd", "c")]
-	[ParameterDescription("The command that will run immediately after database loaded")]
-	public string? Command { get; set; }
-
-	[ParameterAlias("noloop", "nl")]
-	[ParameterDescription("Disable the main loop. The program will immediately exit after executing the command specified by '-command' parameter.")]
-	public bool? DisableLoop { get; set; }
-
-	[ParameterAlias("batch", "bf")]
-	[ParameterDescription("Execute each lines of specified file as command AND EXIT. Remember to append 'save' at the last line to save all changes.")]
-	public string? BatchFile { get; set; }
-
-	[ParameterAlias("export", "ex")]
-	[ParameterDescription("Export all entries to specified file AND EXIT.")]
-	public string? ExportFile { get; set; }
-}
 
 public class Program
 {
@@ -43,7 +15,7 @@ public class Program
 	private readonly string dbFileName;
 	public Database Database { get; }
 
-	public string DbFile { get; set; }
+	public string DbPath { get; set; }
 	public CommandFactory CommandFactory { get; }
 	public ConfigRoot Config { get; }
 
@@ -51,17 +23,37 @@ public class Program
 	{
 		if (!ParameterDeserializer.TryParse(out ProgramParameter param, args))
 		{
-			Console.WriteLine(ParameterDeserializer.GetHelpMessage<ProgramParameter>());
+			Console.WriteLine(ParameterDeserializer.GetHelpMessage<ProgramParameter>("Common parameters:"));
+			Console.WriteLine(ParameterDeserializer.GetHelpMessage<DatabaseCreationParameter>("Database creation parameters (Only applies when opening an inexistent database file):"));
 			return;
 		}
 
-		var instance = new Program(
-			param.Database,
-			param.Password,
-			param.DisableLoop != true,
-			args);
+		Program? instance;
+		var dbPath = Path.GetFullPath(param.Database);
+		var dbCreation = !new FileInfo(dbPath).Exists;
+		if (dbCreation)
+		{
+			if (ParameterDeserializer.TryParse(out DatabaseCreationParameter cparam, args))
+			{
+				// Create
+				instance = new Program(dbPath, !param.DisableLoop, param.Password, cparam);
+			}
+			else
+			{
+				Console.WriteLine(ParameterDeserializer.GetHelpMessage<DatabaseCreationParameter>("Database creation parameters:"));
+				return;
+			}
+		}
+		else
+		{
+			// Load
+			instance = new Program(dbPath, !param.DisableLoop, param.Password);
+		}
 
-		if (!string.IsNullOrEmpty(param.ExportFile))
+		if (instance is null)
+			return;
+
+		if (!dbCreation && !string.IsNullOrEmpty(param.ExportFile))
 		{
 			try
 			{
@@ -77,21 +69,7 @@ public class Program
 
 		if (!string.IsNullOrWhiteSpace(param.BatchFile) && new FileInfo(param.BatchFile).Exists)
 		{
-			IList<string> lines;
-			try
-			{
-				lines = File.ReadAllLines(param.BatchFile);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine("Failed to read the batch file: " + param.BatchFile);
-				Console.WriteLine(ex);
-				Environment.Exit(1);
-				return;
-			}
-
-			foreach (var line in lines)
-				instance.Execute(line);
+			instance.BatchExecute(param.BatchFile);
 			return;
 		}
 
@@ -102,15 +80,59 @@ public class Program
 		instance.Start();
 	}
 
-	public Program(string dbFile, string password, bool loop, params string[] args)
+	/// <summary>
+	/// Loads the specified already-existing database file
+	/// </summary>
+	/// <param name="dbFile">Full path to source database file</param>
+	/// <param name="loop">Enable command loop</param>
+	/// <param name="password">The database encryption password</param>
+	public Program(string dbFile, bool loop, string password) : this(dbFile, loop)
 	{
+		try
+		{
+			Database = DatabaseLoader.Load(DbPath, Encoding.UTF8.GetBytes(password));
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Database loading failure.");
+			Console.WriteLine(ex);
+			Environment.Exit(ex.HResult);
+		}
+	}
+
+	/// <summary>
+	/// Creates a new database from scratch
+	/// </summary>
+	/// <param name="dbPath">Full path to destination database file</param>
+	/// <param name="loop">Enable command loop</param>
+	/// <param name="password">The initial database encryption password</param>
+	/// <param name="parameter">Additional database creation parameter</param>
+	public Program(string dbPath, bool loop, string password, DatabaseCreationParameter parameter) : this(dbPath, loop)
+	{
+		try
+		{
+			Database = DatabaseCreator.Create(dbPath, Encoding.UTF8.GetBytes(password), parameter);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Database creation failure.");
+			Console.WriteLine(ex);
+			Environment.Exit(ex.HResult);
+		}
+	}
+
+	private Program(string dbPath, bool loop)
+	{
+		DbPath = dbPath;
+		dbFileName = Path.GetFileName(DbPath);
+
 		try
 		{
 			Config = new ConfigRoot();
 			if (new FileInfo(ConfigFileName).Exists)
 				Config = LoadConfig();
 			else
-				WriteDefaultConfig(Config);
+				WriteConfig(Config);
 		}
 		catch (Exception ex)
 		{
@@ -118,31 +140,14 @@ public class Program
 			Console.WriteLine(ex);
 			Environment.Exit(ex.HResult);
 		}
-
-		try
-		{
-			DbFile = Path.GetFullPath(dbFile);
-			dbFileName = Path.GetFileName(DbFile);
-
-			Database? database = new FileInfo(DbFile).Exists
-				? DatabaseLoader.Run(DbFile, Encoding.UTF8.GetBytes(password))
-				: DatabaseCreator.Create(dbFile, Encoding.UTF8.GetBytes(password), args);
-
-			if (database is null)
-				return;
-			Database = database;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine("Failed to load the database file. Maybe mismatched key?");
-			Console.WriteLine(ex);
-			Environment.Exit(ex.HResult);
-		}
-
 		this.loop = loop;
 		CommandFactory = new CommandFactory(this);
 	}
 
+	/// <summary>
+	/// Loads configuration file and deserializes it as <see cref="ConfigRoot"/> DTO
+	/// </summary>
+	/// <returns>The deserialized <see cref="ConfigRoot"/> DTO object</returns>
 	private static ConfigRoot LoadConfig()
 	{
 		using FileStream stream = File.Open(ConfigFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -150,7 +155,11 @@ public class Program
 		return (ConfigRoot)serializer.Deserialize(stream)!;
 	}
 
-	private static void WriteDefaultConfig(ConfigRoot config)
+	/// <summary>
+	/// Writes the configuration file
+	/// </summary>
+	/// <param name="config">Deserialized <see cref="ConfigRoot"/> DTO to write</param>
+	private static void WriteConfig(ConfigRoot config)
 	{
 		using FileStream stream = File.Open(ConfigFileName, FileMode.Create, FileAccess.Write, FileShare.None);
 		using var xw = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true, Encoding = new UTF8Encoding(false) });
@@ -158,8 +167,30 @@ public class Program
 		serializer.Serialize(xw, config);
 	}
 
+	private void BatchExecute(string batchFile)
+	{
+		IList<string> lines;
+		try
+		{
+			lines = File.ReadAllLines(batchFile);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Failed to read the batch file: " + batchFile);
+			Console.WriteLine(ex);
+			Environment.Exit(1);
+			return;
+		}
+
+		foreach (var line in lines)
+			Execute(line);
+	}
+
 	private void Start() => MainLoop();
 
+	/// <summary>
+	/// Saves the database, with internal exception handling.
+	/// </summary>
 	public void SaveDb()
 	{
 		try
@@ -173,6 +204,10 @@ public class Program
 		}
 	}
 
+	/// <summary>
+	/// Exits the command loop
+	/// </summary>
+	/// <param name="discard">Don't save the database before exiting</param>
 	public void Exit(bool discard)
 	{
 		loop = false;
@@ -180,12 +215,21 @@ public class Program
 			SaveDb();
 	}
 
+	/// <summary>
+	/// Executes the specified command with parameters
+	/// </summary>
+	/// <param name="line">The full command line</param>
 	private void Execute(string line)
 	{
 		var pieces = line.SplitOutsideQuotes(' ');
 		Execute(pieces[0], pieces.Skip(1).ToArray());
 	}
 
+	/// <summary>
+	/// Executes the specified command with parameters
+	/// </summary>
+	/// <param name="cmdString">Command to execute in string</param>
+	/// <param name="args">Command parameters</param>
 	private void Execute(string cmdString, string[] args)
 	{
 		AbstractCommand? cmd = CommandFactory.FindCommand(cmdString);
@@ -195,6 +239,9 @@ public class Program
 			Console.WriteLine($"Command '{cmdString}' not found.");
 	}
 
+	/// <summary>
+	/// Main command loop to interactively handle user command inputs
+	/// </summary>
 	private void MainLoop()
 	{
 		while (loop)

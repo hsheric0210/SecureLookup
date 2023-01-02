@@ -1,20 +1,16 @@
 ﻿using SecureLookup.Compression;
 using SecureLookup.Encryption;
 using SecureLookup.Hash;
+using SecureLookup.Parameter;
 using SecureLookup.PasswordHash;
+using System.Security.Cryptography;
 
 namespace SecureLookup.Db;
 public static class DatabaseCreator
 {
-	public static Database? Create(string destination, byte[] password, params string[] args)
+	public static Database Create(string destination, byte[] password, DatabaseCreationParameter param)
 	{
-		if (!ParameterDeserializer.TryParse(out DatabaseCreationParameter param, args))
-		{
-			Console.WriteLine(ParameterDeserializer.GetHelpMessage<DatabaseCreationParameter>());
-			return null;
-		}
 		DbOuterRoot outer = PrepareOuter(param);
-
 		var pwHash = outer.PrimaryHashPassword(password);
 		var db = new Database()
 		{
@@ -55,7 +51,8 @@ public static class DatabaseCreator
 		return new DbPasswordHashingEntry
 		{
 			AlgorithmName = algorithmName,
-			Properties = props
+			SaltBytes = RandomNumberGenerator.GetBytes(hash.SaltSize),
+			Properties = props,
 		};
 	}
 

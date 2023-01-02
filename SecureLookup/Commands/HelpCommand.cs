@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using SecureLookup.Parameter;
+using System.Text;
 
 namespace SecureLookup.Commands;
 internal class HelpCommandParameter

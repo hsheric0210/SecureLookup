@@ -1,5 +1,7 @@
-﻿namespace SecureLookup.Db;
-internal class DatabaseCreationParameter
+﻿using SecureLookup.Parameter;
+
+namespace SecureLookup;
+public class DatabaseCreationParameter
 {
 	[ParameterAlias("phashalg")]
 	[ParameterDescription("Primary password hashing algorithm")]

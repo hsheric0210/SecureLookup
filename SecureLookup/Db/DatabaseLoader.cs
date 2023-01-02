@@ -13,7 +13,7 @@ public class DatabaseLoader
 	/// <param name="password">Database decryption password</param>
 	/// <returns>Loaded <see cref="Database"/> instance</returns>
 	/// <exception cref="AggregateException">Thrown if there are any exception occurs during database load</exception>
-	public static Database Run(string source, byte[] password)
+	public static Database Load(string source, byte[] password)
 	{
 		DbOuterRoot outer = LoadOuter(source);
 		CheckDbIntegrity(outer);
@@ -22,6 +22,7 @@ public class DatabaseLoader
 
 		return new Database()
 		{
+			Source = source,
 			OuterRoot = outer,
 			InnerRoot = inner,
 			PasswordHash = primaryHashed

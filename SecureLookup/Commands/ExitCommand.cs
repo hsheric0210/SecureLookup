@@ -1,4 +1,6 @@
-﻿namespace SecureLookup.Commands;
+﻿using SecureLookup.Parameter;
+
+namespace SecureLookup.Commands;
 
 internal class ExitCommandParameter
 {

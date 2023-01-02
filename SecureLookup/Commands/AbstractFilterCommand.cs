@@ -1,4 +1,5 @@
 ﻿using SecureLookup.Db;
+using SecureLookup.Parameter;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -37,7 +38,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 	{
 		if (!ParameterDeserializer.TryParse(out FilterCommandParameter param, args))
 			return false;
-		Predicate<string>? pred = CreatePredicate(param.Mode, param.Keyword, args.HasSwitch("cs"));
+		Predicate<string>? pred = CreatePredicate(param.Mode, param.Keyword, param.CaseSensitive);
 		if (pred is null)
 		{
 			Console.WriteLine("Unsupported mode: " + param.Mode);
