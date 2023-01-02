@@ -36,7 +36,7 @@ Unique dictionary support is available. It can be enabled by providing the full 
   * ```-nameHello```, ```-name:Hello```, ```-name=Hello``` does the same thing
 * You can use double quote (") to specify string which contains whitespaces.
   * ```-name"Hello World!"```
-    * ```args.GetSwitch("name")``` will return ```"Hello World!"```,   
+    * ```args.GetSwitch("name")``` will return ```"Hello World!"```,
     instead of ```"Hello```
 
 ### Conclusion
@@ -143,7 +143,7 @@ Inner database is encrypted by default. This decrypted-form xml file can be obta
 ### Compression
 * Deflate
 * Gzip
-* LZMA
+* LZMA - Buggy: LzmaStream always throw 'Data Error' on decompression
 * PPMd
 
 ### Hashing (for integrity check)
@@ -161,14 +161,14 @@ Also applies to '-PrimaryPasswordHashingProperties' and '-SecondaryPasswordHashi
 * PBKDF2 - ```iterations=<# of iterations>```
     > In 2021, OWASP recommended to use 310,000 iterations for PBKDF2-HMAC-SHA256 and 120,000 for PBKDF2-HMAC-SHA512. [#](https://en.wikipedia.org/wiki/PBKDF2)
 * Argon2 - ```iterations=<# of iterations>;memorySizeKb=<memory size in KB>;parallelism=<parallelism>```
-    > The Argon2 documentation recommends 0.5 seconds for authentication. Libsodium¡¯s documentation recommends 1 second for web applications and 5 seconds for desktop applications.
-    > I personally wouldn¡¯t recommend anything more than 1 second or your users will hate you and logins will end up DoS¡¯ing your application. Anything less than 0.5 seconds is a certain security failure. [#](https://www.twelve21.io/how-to-choose-the-right-parameters-for-argon2/)
+    > The Argon2 documentation recommends 0.5 seconds for authentication. Libsodium's documentation recommends 1 second for web applications and 5 seconds for desktop applications.
+    > I personally wouldn't recommend anything more than 1 second or your users will hate you and logins will end up DoS'ing your application. Anything less than 0.5 seconds is a certain security failure. [#](https://www.twelve21.io/how-to-choose-the-right-parameters-for-argon2/)
 * Bcrypt - ```cost=<cost in 4..31>```
 * Scrypt - ```N=<cost factor>;r=<block size factor>;p=<parallelization factor>```
 
 ### Compression
 Also applies to '-DatabaseCompressionProperties' parameter on database creation
 * Deflate - ```x=<compression level 0..9>```
-* Gzip
+* Gzip - No props available
 * LZMA - ```d=<dictionary size>;mf=<match finder; 'bt4' by default>;fb=<# of fast bytes; 32 by default>;lc=<literal context bits>;lp=<literal pos bits>;pb=<pos state bits>```
 * PPMd - ```mem=<memory size>;o=<model order>```
