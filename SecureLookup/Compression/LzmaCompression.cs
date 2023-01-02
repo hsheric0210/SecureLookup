@@ -35,31 +35,34 @@ internal class LzmaCompression : AbstractCompression
 
 	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		using var inStream = new MemoryStream(uncompressed);
 		using var outStream = new MemoryStream();
-		using var compress = new LzmaStream(CreateEncoderProperties(
-			int.Parse(props[DictionarySizeProp]),
-			props[MatchFinderProp],
-			int.Parse(props[NumFastBytesProp]),
-			int.Parse(props[LiteralContextBitsProp]),
-			int.Parse(props[LiteralPosBitsProp]),
-			int.Parse(props[PosStateBitsProp])), false, outStream);
-		inStream.CopyTo(compress);
+		using (var inStream = new MemoryStream(uncompressed))
+		{
+			using var compress = new LzmaStream(CreateEncoderProperties(
+				int.Parse(props[DictionarySizeProp]),
+				props[MatchFinderProp],
+				int.Parse(props[NumFastBytesProp]),
+				int.Parse(props[LiteralContextBitsProp]),
+				int.Parse(props[LiteralPosBitsProp]),
+				int.Parse(props[PosStateBitsProp])), false, outStream);
+			inStream.CopyTo(compress);
+		}
 		return outStream.ToArray();
 	}
 
 	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
 	{
-		using var inStream = new MemoryStream(compressed);
-		using var decompress = new LzmaStream(CreateDecoderProperties(
-			uint.Parse(props[DictionarySizeProp]),
-			int.Parse(props[LiteralContextBitsProp]),
-			int.Parse(props[LiteralPosBitsProp]),
-			int.Parse(props[PosStateBitsProp])), inStream);
 		using var outStream = new MemoryStream();
-		decompress.CopyTo(outStream);
+		using (var inStream = new MemoryStream(compressed))
+		{
+			using var decompress = new LzmaStream(CreateDecoderProperties(
+				uint.Parse(props[DictionarySizeProp]),
+				int.Parse(props[LiteralContextBitsProp]),
+				int.Parse(props[LiteralPosBitsProp]),
+				int.Parse(props[PosStateBitsProp])), inStream);
+			decompress.CopyTo(outStream);
+		}
 		return outStream.ToArray();
-
 	}
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props)
@@ -78,17 +81,19 @@ internal class LzmaCompression : AbstractCompression
 	}
 
 	/// <summary>
-	/// https://github.com/jljusten/LZMA-SDK/blob/781863cdf592da3e97420f50de5dac056ad352a5/DOC/lzma-specification.txt#L50
+	/// <list type="bullet">
+	/// <item><see href="https://github.com/jljusten/LZMA-SDK/blob/781863cdf592da3e97420f50de5dac056ad352a5/DOC/lzma-specification.txt#L50"/></item>
+	/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/src/SharpCompress/Compressors/LZMA/LzmaStream.cs#L116"/></item>
+	/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/src/SharpCompress/Compressors/LZMA/LzmaEncoder.cs#L1644"/></item>
+	/// </list>
 	/// </summary>
 	private byte[] CreateDecoderProperties(uint dictionarySize = 1 << 20, int literalContextBits = 3, int literalPosBits = 0, int posStateBits = 2)
 	{
-		var dictSize = new byte[8];
-		BinaryPrimitives.WriteUInt32LittleEndian(dictSize, dictionarySize);
-
-		var bytes = new byte[9];
-		bytes[0] = (byte)((posStateBits * 5 + literalPosBits) * 9 + literalContextBits);
-		Array.ConstrainedCopy(dictSize, 0, bytes, 1, 8);
-		return bytes;
+		var props = new byte[5];
+		props[0] = (byte)((posStateBits * 5 + literalPosBits) * 9 + literalContextBits);
+		for (var i = 0; i < 4; i++)
+			props[1 + i] = (byte)((dictionarySize >> (8 * i)) & 0xFF);
+		return props;
 	}
 
 	private LzmaEncoderProperties CreateEncoderProperties(

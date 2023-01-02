@@ -1,4 +1,5 @@
 ﻿using SharpCompress.Compressors.Deflate;
+using SharpCompress.IO;
 
 namespace SecureLookup.Compression;
 /*
@@ -30,10 +31,12 @@ internal class GzipCompression : AbstractCompression
 
 	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		using var inStream = new MemoryStream(uncompressed);
 		using var outStream = new MemoryStream();
-		using var compress = new GZipStream(outStream, SharpCompress.Compressors.CompressionMode.Compress);
-		inStream.CopyTo(compress);
+		using (var inStream = new MemoryStream(uncompressed))
+		{
+			using var compress = new GZipStream(outStream, SharpCompress.Compressors.CompressionMode.Compress);
+			inStream.CopyTo(compress);
+		}
 		return outStream.ToArray();
 	}
 

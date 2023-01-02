@@ -41,19 +41,23 @@ internal class PPMdCompression : AbstractCompression
 
 	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		using var inStream = new MemoryStream(uncompressed);
 		using var outStream = new MemoryStream();
-		using var compress = new PpmdStream(new PpmdProperties(int.Parse(props[AllocatorSizeProp]), int.Parse(props[ModelOrderProp])), outStream, true);
-		inStream.CopyTo(compress);
+		using (var inStream = new MemoryStream(uncompressed))
+		{
+			using var compress = new PpmdStream(new PpmdProperties(int.Parse(props[AllocatorSizeProp]), int.Parse(props[ModelOrderProp])), outStream, true);
+			inStream.CopyTo(compress);
+		}
 		return outStream.ToArray();
 	}
 
 	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
 	{
-		using var inStream = new MemoryStream(compressed);
-		using var decompress = new PpmdStream(new PpmdProperties(int.Parse(props[AllocatorSizeProp]), int.Parse(props[ModelOrderProp])), inStream, false);
 		using var outStream = new MemoryStream();
-		decompress.CopyTo(outStream);
+		using (var inStream = new MemoryStream(compressed))
+		{
+			using var decompress = new PpmdStream(new PpmdProperties(int.Parse(props[AllocatorSizeProp]), int.Parse(props[ModelOrderProp])), inStream, false);
+			decompress.CopyTo(outStream);
+		}
 		return outStream.ToArray();
 	}
 
