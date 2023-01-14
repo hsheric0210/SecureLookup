@@ -126,12 +126,12 @@ internal class AddCommand : AbstractCommand
 		var name = param.Name;
 		DbEntry? duplicate = DeleteDuplicateNameEntries(name);
 
-		var newName = GenerateNewFileName(param.ArchiveNameLength, dest, param.ArchiveNameDictionary);
+		var destName = GenerateNewFileName(param.ArchiveNameLength, dest, param.ArchiveNameDictionary);
 		DbRoot.Entries.Add(new DbEntry()
 		{
 			Name = name,
 			OriginalFileName = srcFileName, // Path is relative to database path
-			ArchiveFileName = newName,
+			ArchiveFileName = destName,
 			Password = password,
 			Urls = param.Urls?.Split(param.UrlSeparator).ToList() ?? duplicate?.Urls,
 			Notes = param.Notes?.Split(param.NoteSeparator).ToList() ?? duplicate?.Notes
@@ -140,12 +140,13 @@ internal class AddCommand : AbstractCommand
 
 		Console.WriteLine("Entry added. Don't forget to save the database!");
 
+		var destPath = Path.Combine(dest, destName);
 		var appendTo = param.AppendLogTo;
 		if (!string.IsNullOrWhiteSpace(appendTo))
 		{
 			try
 			{
-				File.AppendAllText(appendTo, $"{srcFileName}|{newName}|{password}{Environment.NewLine}");
+				File.AppendAllText(appendTo, $"{srcPath}|{destPath}|{password}{Environment.NewLine}");
 			}
 			catch (Exception ex)
 			{
@@ -156,7 +157,7 @@ internal class AddCommand : AbstractCommand
 		}
 
 		if (!param.NoArchive)
-			CallArchiver(srcPath, Path.Combine(dest, newName), password, isFile);
+			CallArchiver(srcPath, destPath, password, isFile);
 
 		return true;
 	}

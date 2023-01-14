@@ -78,7 +78,6 @@ public class DbCompressionEntry
 
 	/// <summary>
 	/// Nested XML document that stores additional options needed for compression/decompression
-	/// TODO: Check xml nesting is supported
 	/// </summary>
 	[XmlElement("properties")]
 	public string Properties { get; set; } = "";

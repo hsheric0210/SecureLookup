@@ -27,7 +27,7 @@ internal class OpenCommandParameter
 
 internal class ExtractCommand : AbstractFilterCommand
 {
-	public override string Description => "Open specified archive file with specified unarchiver.";
+	public override string Description => "Extracts specified archive with specified unarchiver.";
 
 	protected override string AdditionalHelpMessage => ParameterDeserializer.GetHelpMessage<OpenCommandParameter>("Extraction parameters");
 

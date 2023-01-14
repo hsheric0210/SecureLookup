@@ -22,6 +22,7 @@ public class CommandFactory
 		cmdList.Add(new SaveCommand(instance));
 		cmdList.Add(new ImportCommand(instance));
 		cmdList.Add(new ChangePasswordCommand(instance));
+		cmdList.Add(new CleanCommand(instance));
 		cmdList.Add(new HelpCommand(instance));
 		cmdList.Add(new ExitCommand(instance));
 	}
