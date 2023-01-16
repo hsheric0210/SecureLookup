@@ -20,6 +20,10 @@ internal class OpenCommandParameter
 	[ParameterDescription("Assume yes to all user input prompts")]
 	public bool AssumeAllYes { get; set; }
 
+	[ParameterAlias("parallel", "prl")]
+	[ParameterDescription("Override the parallel execution limitation of unarchivers")]
+	public int Parallelism { get; set; } = 8;
+
 	[ParameterAlias("Block", "bl")]
 	[ParameterDescription("Block command execution until all unarchiving is finished")]
 	public bool BlockExecution { get; set; }
@@ -93,20 +97,29 @@ internal class ExtractCommand : AbstractFilterCommand
 			Console.WriteLine("Archive file-name: " + entry.ArchiveFileName);
 			Console.WriteLine("Archive password: " + entry.Password);
 
+			var sync = new SemaphoreSlim(param.Parallelism);
 			taskQueue.Add(Task.Run(async () =>
 			{
-				var process = new Process();
-				process.StartInfo.FileName = Instance.Config.UnarchiverExecutable;
-				process.StartInfo.Arguments = Instance.Config.UnarchiverParameter.FormatToken(new
+				try
 				{
-					Target = target,
-					Archive = archive,
-					entry.Password
-				});
-				process.StartInfo.WorkingDirectory = repo;
-				process.StartInfo.UseShellExecute = true;
-				process.Start();
-				await process.WaitForExitAsync();
+					await sync.WaitAsync();
+					var process = new Process();
+					process.StartInfo.FileName = Instance.Config.UnarchiverExecutable;
+					process.StartInfo.Arguments = Instance.Config.UnarchiverParameter.FormatToken(new
+					{
+						Target = target,
+						Archive = archive,
+						entry.Password
+					});
+					process.StartInfo.WorkingDirectory = repo;
+					process.StartInfo.UseShellExecute = true;
+					process.Start();
+					await process.WaitForExitAsync();
+				}
+				finally
+				{
+					sync.Release();
+				}
 			}));
 		}
 		if (param.BlockExecution)

@@ -16,8 +16,12 @@ internal class FilterCommandParameter
 	public char Target { get; set; } = 'n';
 
 	[ParameterAlias("kw", "k", "w")]
-	[ParameterDescription("Filter keyword")]
-	public string Keyword { get; set; } = "";
+	[ParameterDescription("Filter keywords; separated in '-KeywordSeparator' char")]
+	public string Keywords { get; set; } = "";
+
+	[ParameterAlias("kws", "ks")]
+	[ParameterDescription("Separator character to separate multiple keywords")]
+	public char KeywordSeparator { get; set; } = ';';
 
 	[ParameterAlias("casesens", "cs")]
 	[ParameterDescription("Case sensitive search (Search is case insensitive by default, even regex)")]
@@ -38,7 +42,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 	{
 		if (!ParameterDeserializer.TryParse(out FilterCommandParameter param, args))
 			return false;
-		Predicate<string>? pred = CreatePredicate(param.Mode, param.Keyword, param.CaseSensitive);
+		Predicate<string>? pred = CreatePredicate(param.Mode, param.Keywords.Split(param.KeywordSeparator), param.CaseSensitive);
 		if (pred is null)
 		{
 			Console.WriteLine("Unsupported mode: " + param.Mode);
@@ -66,7 +70,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		}
 		catch (RegexParseException ex)
 		{
-			Console.WriteLine("Invalid regex: " + param.Keyword);
+			Console.WriteLine("Invalid regex: " + param.Keywords);
 			Console.WriteLine("Detail: " + ex.Message);
 			return false;
 		}
@@ -80,16 +84,16 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 
 	protected abstract bool ExecuteForEntries(string[] args, IList<DbEntry> entries);
 
-	private static Predicate<string>? CreatePredicate(char mode, string keyword, bool caseSens)
+	private static Predicate<string>? CreatePredicate(char mode, IEnumerable<string> keywords, bool caseSens)
 	{
 		StringComparison cmp = caseSens ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 		return mode switch
 		{
-			'e' => (string str) => str.Equals(keyword, cmp),
-			'c' => (string str) => str.Contains(keyword, cmp),
-			's' => (string str) => str.StartsWith(keyword, cmp),
-			'n' => (string str) => str.EndsWith(keyword, cmp),
-			'r' => (string str) => new Regex(keyword, caseSens ? RegexOptions.None : RegexOptions.IgnoreCase).Match(str).Success,
+			'e' => (string str) => keywords.Any(kw => str.Equals(kw, cmp)),
+			'c' => (string str) => keywords.Any(kw => str.Contains(kw, cmp)),
+			's' => (string str) => keywords.Any(kw => str.StartsWith(kw, cmp)),
+			'n' => (string str) => keywords.Any(kw => str.EndsWith(kw, cmp)),
+			'r' => (string str) => keywords.Select(kw => new Regex(kw, caseSens ? RegexOptions.None : RegexOptions.IgnoreCase)).Any(r => r.Match(str).Success),
 			_ => null
 		};
 	}
