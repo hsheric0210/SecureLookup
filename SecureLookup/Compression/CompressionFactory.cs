@@ -17,17 +17,9 @@ public static class CompressionFactory
 	/// </summary>
 	public static ICollection<string> GetAvailableAlgorithms() => registeredCompressions.Select(h => h.AlgorithmName).ToList();
 
-	public static byte[] Compress(DbCompressionEntry entry, byte[] uncompressed)
-	{
-		AbstractCompression compression = Lookup(entry.AlgorithmName);
-		return compression.Compress(uncompressed, PropertiesUtils.Deserialize(entry.Properties));
-	}
+	public static byte[] Compress(DbCompressionEntry entry, byte[] uncompressed) => Lookup(entry.AlgorithmName).Compress(uncompressed, PropertiesUtils.Deserialize(entry.Properties));
 
-	public static byte[] Decompress(DbCompressionEntry entry, byte[] compressed)
-	{
-		AbstractCompression compression = Lookup(entry.AlgorithmName);
-		return compression.Decompress(compressed, PropertiesUtils.Deserialize(entry.Properties));
-	}
+	public static byte[] Decompress(DbCompressionEntry entry, byte[] compressed) => Lookup(entry.AlgorithmName).Decompress(compressed);
 
 	public static AbstractCompression Lookup(string algorithmName) => registeredCompressions.FirstOrDefault(enc => enc.AlgorithmName.Equals(algorithmName, StringComparison.OrdinalIgnoreCase)) ?? throw new NotSupportedException("Unknown compression algorithm: " + algorithmName);
 }

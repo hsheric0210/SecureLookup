@@ -1,25 +1,19 @@
-﻿using SharpCompress.Compressors.LZMA;
+﻿using Org.BouncyCastle.Asn1.Crmf;
+using SharpCompress.Compressors.LZMA;
+using System.Buffers;
 using System.Buffers.Binary;
 
 namespace SecureLookup.Compression;
-/*
- FIXME: Decompression error
-d:\Repo\SecureLookup\SecureLookup\bin\Debug\net6.0>securelookup -db=test_LZMA -calg=LZMA -cprop="d=16777216;mf=bt4;fb=64;lc=4;lp=0;pb=2" -pass=abcd
-Failed to load the database file. Maybe mismatched key?
-System.AggregateException: Decompression failure (Data Error)
- ---> SharpCompress.Compressors.LZMA.DataErrorException: Data Error
-   at SharpCompress.Compressors.LZMA.Decoder.Code(Int32 dictionarySize, OutWindow outWindow, Decoder rangeDecoder)
-   at SharpCompress.Compressors.LZMA.LzmaStream.Read(Byte[] buffer, Int32 offset, Int32 count)
-   at System.IO.Stream.CopyTo(Stream destination, Int32 bufferSize)
-   at System.IO.Stream.CopyTo(Stream destination)
-   at SecureLookup.Compression.LzmaCompression.Decompress(Byte[] compressed, IReadOnlyDictionary`2 props) in D:\Repo\SecureLookup\SecureLookup\Compression\LzmaCompression.cs:line 42
-   at SecureLookup.Compression.CompressionFactory.Decompress(DbCompressionEntry entry, Byte[] compressed) in D:\Repo\SecureLookup\SecureLookup\Compression\CompressionFactory.cs:line 29
-   at SecureLookup.Db.DatabaseLoader.Decompress(DbCompressionEntry entry, Byte[] compressed) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 81
-   --- End of inner exception stack trace ---
-   at SecureLookup.Db.DatabaseLoader.Decompress(DbCompressionEntry entry, Byte[] compressed) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 85
-   at SecureLookup.Db.DatabaseLoader.Run(String source, Byte[] password) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 21
-   at SecureLookup.Program..ctor(String dbFile, String password, Boolean loop, String[] args) in D:\Repo\SecureLookup\SecureLookup\Program.cs:line 127
- */
+
+/// <summary>
+/// <list type="bullet">
+/// <item><see href="https://github.com/jljusten/LZMA-SDK/blob/781863cdf592da3e97420f50de5dac056ad352a5/DOC/lzma-specification.txt#L50"/></item>
+/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/src/SharpCompress/Compressors/LZMA/LzmaStream.cs#L116"/></item>
+/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/src/SharpCompress/Compressors/LZMA/LzmaEncoder.cs#L1644"/></item>
+/// <item><see href="https://chomdoo.tistory.com/16"/></item>
+/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/tests/SharpCompress.Test/Streams/LzmaStreamTests.cs#L564"/></item>
+/// </list>
+/// </summary>
 internal class LzmaCompression : AbstractCompression
 {
 	protected const string DictionarySizeProp = "d";
@@ -28,6 +22,7 @@ internal class LzmaCompression : AbstractCompression
 	protected const string LiteralContextBitsProp = "lc";
 	protected const string LiteralPosBitsProp = "lp";
 	protected const string PosStateBitsProp = "pb";
+	private const int BufferSize = 8192;
 
 	public LzmaCompression() : base("LZMA")
 	{
@@ -35,32 +30,53 @@ internal class LzmaCompression : AbstractCompression
 
 	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
 	{
+		var dictSize = int.Parse(props[DictionarySizeProp]);
+		if (dictSize <= 32)
+			dictSize = 2 << dictSize;
 		using var outStream = new MemoryStream();
 		using (var inStream = new MemoryStream(uncompressed))
 		{
-			using var compress = new LzmaStream(CreateEncoderProperties(
-				int.Parse(props[DictionarySizeProp]),
+			LzmaEncoderProperties prop = CreateEncoderProperties(
+				dictSize,
 				props[MatchFinderProp],
 				int.Parse(props[NumFastBytesProp]),
 				int.Parse(props[LiteralContextBitsProp]),
 				int.Parse(props[LiteralPosBitsProp]),
-				int.Parse(props[PosStateBitsProp])), false, outStream);
+				int.Parse(props[PosStateBitsProp]));
+			using var compress = new LzmaStream(prop, false, outStream);
+			outStream.Write(compress.Properties);
+			outStream.Write(BitConverter.GetBytes(uncompressed.LongLength));
 			inStream.CopyTo(compress);
 		}
 		return outStream.ToArray();
 	}
 
-	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
+	public override byte[] Decompress(byte[] compressed)
 	{
 		using var outStream = new MemoryStream();
 		using (var inStream = new MemoryStream(compressed))
 		{
-			using var decompress = new LzmaStream(CreateDecoderProperties(
-				uint.Parse(props[DictionarySizeProp]),
-				int.Parse(props[LiteralContextBitsProp]),
-				int.Parse(props[LiteralPosBitsProp]),
-				int.Parse(props[PosStateBitsProp])), inStream);
-			decompress.CopyTo(outStream);
+			if (inStream.Length < 5)
+				throw new AggregateException($"LZMA header too short. ({inStream.Length} bytes)");
+			var propsBytes = new byte[5];
+			var outSizeBytes = new byte[sizeof(long)];
+			inStream.Read(propsBytes);
+			inStream.Read(outSizeBytes);
+			var outSize = BitConverter.ToInt64(outSizeBytes);
+
+			// https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/tests/SharpCompress.Test/Streams/LzmaStreamTests.cs#L564
+			using var decompress = new LzmaStream(propsBytes, inStream, compressed.Length, -1, null, false);
+			var buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
+			long totalRead = 0;
+			while (totalRead < outSize)
+			{
+				var read = decompress.Read(buffer, 0, (int)Math.Min(buffer.Length, outSize - totalRead));
+				if (read <= 0)
+					break;
+				outStream.Write(buffer, 0, read);
+				totalRead += read;
+			}
+			ArrayPool<byte>.Shared.Return(buffer);
 		}
 		return outStream.ToArray();
 	}
@@ -78,22 +94,6 @@ internal class LzmaCompression : AbstractCompression
 			&& uint.TryParse(props[LiteralContextBitsProp], out _)
 			&& uint.TryParse(props[LiteralPosBitsProp], out _)
 			&& uint.TryParse(props[PosStateBitsProp], out _);
-	}
-
-	/// <summary>
-	/// <list type="bullet">
-	/// <item><see href="https://github.com/jljusten/LZMA-SDK/blob/781863cdf592da3e97420f50de5dac056ad352a5/DOC/lzma-specification.txt#L50"/></item>
-	/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/src/SharpCompress/Compressors/LZMA/LzmaStream.cs#L116"/></item>
-	/// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/src/SharpCompress/Compressors/LZMA/LzmaEncoder.cs#L1644"/></item>
-	/// </list>
-	/// </summary>
-	private byte[] CreateDecoderProperties(uint dictionarySize = 1 << 20, int literalContextBits = 3, int literalPosBits = 0, int posStateBits = 2)
-	{
-		var props = new byte[5];
-		props[0] = (byte)((posStateBits * 5 + literalPosBits) * 9 + literalContextBits);
-		for (var i = 0; i < 4; i++)
-			props[1 + i] = (byte)((dictionarySize >> (8 * i)) & 0xFF);
-		return props;
 	}
 
 	private LzmaEncoderProperties CreateEncoderProperties(

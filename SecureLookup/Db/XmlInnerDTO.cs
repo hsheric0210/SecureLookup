@@ -7,14 +7,19 @@ public class DbInnerRoot
 {
 	[XmlArray("entries")]
 	[XmlArrayItem("entry")]
-	public List<DbEntry> Entries { get; set; } = new List<DbEntry>();
+	public HashSet<DbEntry> Entries { get; set; } = new HashSet<DbEntry>();
 
 	[XmlArray("generatedFileNames")]
 	[XmlArrayItem("fileName")]
-	public List<string> GeneratedFileNames { get; set; } = new List<string>();
+	public HashSet<string> GeneratedFileNames { get; set; } = new HashSet<string>();
 }
 
-public class DbEntry
+public sealed class GeneratedFileName
+{
+
+}
+
+public sealed class DbEntry : IEquatable<DbEntry?>
 {
 	[XmlElement("name")]
 	public string Name { get; set; } = "";
@@ -35,4 +40,8 @@ public class DbEntry
 	[XmlArray("notes", IsNullable = true)]
 	[XmlArrayItem("note")]
 	public List<string>? Notes { get; set; }
+
+	public override bool Equals(object? obj) => Equals(obj as DbEntry);
+	public bool Equals(DbEntry? other) => other is not null && string.Equals(Name, other.Name, StringComparison.OrdinalIgnoreCase);
+	public override int GetHashCode() => string.GetHashCode(Name, StringComparison.OrdinalIgnoreCase); // Distinct by Name (ignore case)
 }

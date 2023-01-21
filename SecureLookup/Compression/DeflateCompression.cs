@@ -19,10 +19,10 @@ internal class DeflateCompression : AbstractCompression
 		return outStream.ToArray();
 	}
 
-	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
+	public override byte[] Decompress(byte[] compressed)
 	{
 		using var inStream = new MemoryStream(compressed);
-		using var decompress = new DeflateStream(inStream, SharpCompress.Compressors.CompressionMode.Decompress, (CompressionLevel)int.Parse(props[CompressionLevelProp]), Encoding.UTF8);
+		using var decompress = new DeflateStream(inStream, SharpCompress.Compressors.CompressionMode.Decompress, CompressionLevel.Default, Encoding.UTF8);
 		using var outStream = new MemoryStream();
 		decompress.CopyTo(outStream);
 		return outStream.ToArray();

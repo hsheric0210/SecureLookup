@@ -1,4 +1,5 @@
 ﻿using SharpCompress.Compressors.PPMd;
+using System.Buffers.Binary;
 
 namespace SecureLookup.Compression;
 /*
@@ -41,21 +42,31 @@ internal class PPMdCompression : AbstractCompression
 
 	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
 	{
+		var allocatorSize = int.Parse(props[AllocatorSizeProp]);
+		if (allocatorSize <= 32)
+			allocatorSize = 2 << allocatorSize;
+		var modelOrder = int.Parse(props[ModelOrderProp]);
+		var ppmdProps = new PpmdProperties(allocatorSize, modelOrder);
+
 		using var outStream = new MemoryStream();
+		outStream.Write(ppmdProps.Properties);
+
 		using (var inStream = new MemoryStream(uncompressed))
 		{
-			using var compress = new PpmdStream(new PpmdProperties(int.Parse(props[AllocatorSizeProp]), int.Parse(props[ModelOrderProp])), outStream, true);
+			using var compress = new PpmdStream(ppmdProps, outStream, true);
 			inStream.CopyTo(compress);
 		}
 		return outStream.ToArray();
 	}
 
-	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
+	public override byte[] Decompress(byte[] compressed)
 	{
 		using var outStream = new MemoryStream();
 		using (var inStream = new MemoryStream(compressed))
 		{
-			using var decompress = new PpmdStream(new PpmdProperties(int.Parse(props[AllocatorSizeProp]), int.Parse(props[ModelOrderProp])), inStream, false);
+			var propsBytes = new byte[2];
+			inStream.Read(propsBytes);
+			using var decompress = new PpmdStream(new PpmdProperties(propsBytes), inStream, false);
 			decompress.CopyTo(outStream);
 		}
 		return outStream.ToArray();

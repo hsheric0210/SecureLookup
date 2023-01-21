@@ -40,7 +40,7 @@ internal class GzipCompression : AbstractCompression
 		return outStream.ToArray();
 	}
 
-	public override byte[] Decompress(byte[] compressed, IReadOnlyDictionary<string, string> props)
+	public override byte[] Decompress(byte[] compressed)
 	{
 		using var inStream = new MemoryStream(compressed);
 		using var compress = new GZipStream(inStream, SharpCompress.Compressors.CompressionMode.Decompress);

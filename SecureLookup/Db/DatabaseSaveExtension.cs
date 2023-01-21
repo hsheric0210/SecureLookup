@@ -45,9 +45,8 @@ public static class DatabaseSaveExtension
 	{
 		try
 		{
-			Console.WriteLine("Uncompressed: " + inner.Length);
 			var compressed = CompressionFactory.Compress(entry, inner);
-			Console.WriteLine("Compressed: " + compressed.Length);
+			Console.WriteLine($"Database compression ratio: {(double)compressed.LongLength * 100 / inner.LongLength}%");
 			return compressed;
 		}
 		catch (Exception ex)

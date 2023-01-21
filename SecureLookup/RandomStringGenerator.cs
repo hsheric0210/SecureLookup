@@ -11,7 +11,7 @@ internal static class RandomStringGenerator
 	public const string LowerAlphaNumeric = LowerAlpha + Numeric;
 	public const string UpperAlphaNumeric = UpperAlpha + Numeric;
 	public const string MixedAlphaNumeric = UpperAlpha + LowerAlpha + Numeric;
-	public const string SpecialMixedAlphaNumeric = LowerAlpha + Numeric + Special;
+	public const string SpecialMixedAlphaNumeric = MixedAlphaNumeric + Special;
 
 	public static string RandomString(int length, string dictionaryName)
 	{

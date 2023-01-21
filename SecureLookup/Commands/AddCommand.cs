@@ -26,7 +26,7 @@ internal class AddCommandParameter
 
 	[ParameterAlias("PassDict", "PSWDict", "PWDict", "PDict")]
 	[ParameterDescription("Dictionary to generate new password; Predefined dictionary names are available at README")]
-	public string PasswordDictionary { get; set; } = "SpecialAlphaNumeric";
+	public string PasswordDictionary { get; set; } = "SpecialMixedAlphaNumeric";
 
 	[ParameterAlias("Pass", "PSW", "PW")]
 	[ParameterDescription("Use specific archive encryption password; character '|' is disallowed due its usage as separator")]
@@ -66,6 +66,18 @@ internal class AddCommandParameter
 	[ParameterDescription(@"INSTEAD OF RUNNING ARCHIVER(Implicit '-NoArchive' switch), Append the generated(or specified) informations to specified file to support external archiving tools, in following format: <originalFileName>:<archiveFileName>:<password>
 WARNING: You *MUST* run external archiving tools to archive your files")]
 	public string? AppendLogTo { get; set; }
+
+	[ParameterAlias("PreviousHandling", "PrevHandling", "PrevHandle")]
+	[ParameterDescription("If overwriting the existing entry, following actions will be executed to deal with the existing previous archive file: <(R)ename/(M)ove/(D)elete|rename format or destination folder to move> (Deleting archives without any backup is strongly discouraged); Example of archive 'Archive.7z': 'r|{Archive}.yyyy-MM-dd.bak' will rename previous archive to Archive000.7z.2020-01-01.bak; Example: 'm|backup\\{Archive}' will move pervious archive to 'backup\\Archive.zip'")]
+	public char PreviousArchiveHandling { get; set; } = 'r';
+
+	[ParameterAlias("PrevArchiveDir")]
+	[ParameterDescription("The directory previous archives will be moved to, if you specified '-PreviousArchiveHandling=m'")]
+	public string PreviousArchiveMoveDestination { get; set; } = "backup";
+
+	[ParameterAlias("ReallocName")]
+	[ParameterDescription("When overwriting the existing entry, should we have to re-allocate new archive name to newly added entry?")]
+	public bool ReallocateNewName { get; set; } = true;
 }
 
 internal class AddCommand : AbstractCommand
@@ -124,17 +136,42 @@ internal class AddCommand : AbstractCommand
 		}
 
 		var name = param.Name;
-		DbEntry? duplicate = DeleteDuplicateNameEntries(name);
 
-		var destName = GenerateNewFileName(param.ArchiveNameLength, dest, param.ArchiveNameDictionary);
+		// check overwriting
+		DbEntry? previous = DropDuplicateNameEntry(name);
+		if (previous is not null)
+		{
+			var path = Path.Combine(dest, previous.ArchiveFileName);
+			if (new FileInfo(path).Exists)
+			{
+				switch (char.ToLowerInvariant(param.PreviousArchiveHandling))
+				{
+					case 'r': // Rename
+						var newFileName = previous.ArchiveFileName + '.' + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-ffff") + ".bak";
+						File.Move(path, Path.Combine(dest, newFileName));
+						Console.WriteLine($"Previous file {previous.ArchiveFileName} renamed to {newFileName}");
+						break;
+					case 'd': // Delete
+						Shell32.MoveToRecycleBin(path);
+						break;
+					default:
+						var dir = Path.Combine(dest, param.PreviousArchiveMoveDestination);
+						File.Move(path, Path.Combine(dir, previous.ArchiveFileName));
+						Console.WriteLine($"Previous file {previous.ArchiveFileName} moved to {dir}");
+						break;
+				}
+			}
+		}
+
+		var destName = (param.ReallocateNewName ? null : previous?.ArchiveFileName) ?? GenerateNewFileName(param.ArchiveNameLength, dest, param.ArchiveNameDictionary);
 		DbRoot.Entries.Add(new DbEntry()
 		{
 			Name = name,
 			OriginalFileName = srcFileName, // Path is relative to database path
 			ArchiveFileName = destName,
 			Password = password,
-			Urls = param.Urls?.Split(param.UrlSeparator).ToList() ?? duplicate?.Urls,
-			Notes = param.Notes?.Split(param.NoteSeparator).ToList() ?? duplicate?.Notes
+			Urls = param.Urls?.Split(param.UrlSeparator).ToList() ?? previous?.Urls,
+			Notes = param.Notes?.Split(param.NoteSeparator).ToList() ?? previous?.Notes
 		});
 		Instance.Database.MarkDirty();
 
@@ -174,12 +211,11 @@ internal class AddCommand : AbstractCommand
 		return newName;
 	}
 
-	private DbEntry? DeleteDuplicateNameEntries(string name)
+	private DbEntry? DropDuplicateNameEntry(string name)
 	{
 		bool predicate(DbEntry entry) => string.Equals(name, entry.Name, StringComparison.OrdinalIgnoreCase);
-
-		DbEntry? first = DbRoot.Entries.Find(predicate);
-		var deleted = DbRoot.Entries.RemoveAll(predicate);
+		DbEntry? first = DbRoot.Entries.FirstOrDefault(predicate);
+		var deleted = DbRoot.Entries.RemoveWhere(predicate);
 		if (deleted > 0)
 			Console.WriteLine($"Overwriting {deleted} entry with same name '{name}'.");
 		return first;
