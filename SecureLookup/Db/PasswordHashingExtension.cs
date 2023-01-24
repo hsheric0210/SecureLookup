@@ -4,7 +4,7 @@ using SecureLookup.PasswordHash;
 namespace SecureLookup.Db;
 public static class PasswordHashingExtension
 {
-	public static byte[] PrimaryHashPassword(this DbOuterRoot outer, byte[] password)
+	public static ReadOnlySpan<byte> PrimaryHashPassword(this DbOuterRoot outer, ReadOnlySpan<byte> password)
 	{
 		return outer.PrimaryPasswordHashing.HashPassword(
 			"Primary",
@@ -12,7 +12,7 @@ public static class PasswordHashingExtension
 			outer.PrimaryPasswordHashSize);
 	}
 
-	public static byte[] SecondaryHashPassword(this DbOuterRoot outer, byte[] primaryHashed)
+	public static ReadOnlySpan<byte> SecondaryHashPassword(this DbOuterRoot outer, ReadOnlySpan<byte> primaryHashed)
 	{
 		return outer.SecondaryPasswordHashing.HashPassword(
 			"Secondary",
@@ -20,7 +20,7 @@ public static class PasswordHashingExtension
 			EncryptionFactory.Lookup(outer.Encryption.AlgorithmName).KeySize);
 	}
 
-	private static byte[] HashPassword(this DbPasswordHashingEntry entry, string prefix, byte[] data, int hashLength)
+	private static ReadOnlySpan<byte> HashPassword(this DbPasswordHashingEntry entry, string prefix, ReadOnlySpan<byte> data, int hashLength)
 	{
 		try
 		{

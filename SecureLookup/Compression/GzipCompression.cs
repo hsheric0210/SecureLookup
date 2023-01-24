@@ -1,5 +1,4 @@
-﻿using SharpCompress.Compressors.Deflate;
-using SharpCompress.IO;
+﻿using System.IO.Compression;
 
 namespace SecureLookup.Compression;
 /*
@@ -23,31 +22,17 @@ System.AggregateException: Deserialization failure (There is an error in XML doc
    at SecureLookup.Db.DatabaseLoader.Run(String source, Byte[] password) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 21
    at SecureLookup.Program..ctor(String dbFile, String password, Boolean loop, String[] args) in D:\Repo\SecureLookup\SecureLookup\Program.cs:line 127
  */
-internal class GzipCompression : AbstractCompression
+internal class GzipCompression : AbstractStreamCompression
 {
+	public override IReadOnlyDictionary<string, string>? DefaultProperties => null;
+
 	public GzipCompression() : base("GZip")
 	{
 	}
 
-	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
-	{
-		using var outStream = new MemoryStream();
-		using (var inStream = new MemoryStream(uncompressed))
-		{
-			using var compress = new GZipStream(outStream, SharpCompress.Compressors.CompressionMode.Compress);
-			inStream.CopyTo(compress);
-		}
-		return outStream.ToArray();
-	}
+	public override Stream Compress(Stream uncompressed, IReadOnlyDictionary<string, string> props) => new GZipStream(uncompressed, CompressionMode.Compress);
 
-	public override byte[] Decompress(byte[] compressed)
-	{
-		using var inStream = new MemoryStream(compressed);
-		using var compress = new GZipStream(inStream, SharpCompress.Compressors.CompressionMode.Decompress);
-		using var outStream = new MemoryStream();
-		compress.CopyTo(outStream);
-		return outStream.ToArray();
-	}
+	public override Stream Decompress(Stream compressed) => new GZipStream(compressed, CompressionMode.Decompress);
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props) => true;
 }

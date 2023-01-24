@@ -18,7 +18,7 @@ public class Database
 	/// <summary>
 	/// Password hashed with primary password hashing algorithm.
 	/// </summary>
-	internal byte[] PasswordHash { get; set; }
+	internal byte[] PasswordHash;
 
 	/// <summary>
 	/// The database source file path

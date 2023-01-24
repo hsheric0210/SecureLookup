@@ -17,7 +17,7 @@ public static class DatabaseCreator
 			Source = destination,
 			OuterRoot = outer,
 			InnerRoot = new DbInnerRoot(),
-			PasswordHash = pwHash
+			PasswordHash = pwHash.ToArray()
 		};
 		db.Save();
 		return db;
@@ -56,9 +56,15 @@ public static class DatabaseCreator
 		};
 	}
 
-	private static DbCompressionEntry CreateCompression(string algorithmName, string props)
+	private static DbCompressionEntry CreateCompression(string algorithmName, string? props)
 	{
 		AbstractCompression compression = CompressionFactory.Lookup(algorithmName);
+		if (props is null)
+		{
+			props = compression.DefaultProperties is null ? "" : PropertiesUtils.Serialize(compression.DefaultProperties);
+			if (compression.DefaultProperties is not null)
+				Console.WriteLine("Using default properties: " + props);
+		}
 		if (!compression.IsPropertiesValid(PropertiesUtils.Deserialize(props)))
 			throw new ArgumentException("Invalid properties: " + props);
 		return new DbCompressionEntry

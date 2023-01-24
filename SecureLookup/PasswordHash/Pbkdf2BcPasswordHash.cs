@@ -14,10 +14,10 @@ internal abstract class Pbkdf2BcPasswordHash : AbstractPasswordHash
 
 	protected Pbkdf2BcPasswordHash(Func<IDigest> digestSupplier) : base("PBKDF2-HMAC-" + digestSupplier().AlgorithmName) => DigestSupplier = digestSupplier;
 
-	public override byte[] Hash(byte[] password, int desiredLength, byte[] salt, IReadOnlyDictionary<string, string> props)
+	public override ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> password, int desiredLength, ReadOnlySpan<byte> salt, IReadOnlyDictionary<string, string> props)
 	{
 		var pbkdf2 = new Pkcs5S2ParametersGenerator(DigestSupplier());
-		pbkdf2.Init(password, salt, int.Parse(props[IterationsProp]));
+		pbkdf2.Init(password.ToArray(), salt.ToArray(), int.Parse(props[IterationsProp]));
 		var kp = (KeyParameter)pbkdf2.GenerateDerivedMacParameters(desiredLength * 8);
 		return kp.GetKey();
 	}

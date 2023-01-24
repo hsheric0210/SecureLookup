@@ -29,7 +29,7 @@ public class DatabaseCreationParameter
 
 	[ParameterAlias("compressprop", "cprop")]
 	[ParameterDescription("Database compression properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
-	public string DatabaseCompressionProperties { get; set; } = "x=9";
+	public string? DatabaseCompressionProperties { get; set; } = "x=9";
 
 	[ParameterAlias("dhashalg")]
 	[ParameterDescription("Database hashing algorithm (for integrity check)")]

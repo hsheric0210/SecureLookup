@@ -30,7 +30,7 @@ public static class PasswordHashFactory
 	/// <param name="key">Encryption key</param>
 	/// <returns>Encrypted data in XML DTO form</returns>
 	/// <exception cref="NotImplementedException">If there're no encryption named <paramref name="algorithmName"/> found</exception>
-	public static byte[] Hash(DbPasswordHashingEntry entry, byte[] password, int desiredLength)
+	public static ReadOnlySpan<byte> Hash(DbPasswordHashingEntry entry, ReadOnlySpan<byte> password, int desiredLength)
 	{
 		AbstractPasswordHash hash = Lookup(entry.AlgorithmName);
 		return hash.Hash(password, desiredLength, entry.SaltBytes, PropertiesUtils.Deserialize(entry.Properties));

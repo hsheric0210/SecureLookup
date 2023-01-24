@@ -1,36 +1,31 @@
-﻿using SharpCompress.Compressors.Deflate;
-using System.Text;
+﻿using System.IO.Compression;
 
 namespace SecureLookup.Compression;
-internal class DeflateCompression : AbstractStreamCompression
+internal class BrotliCompression : AbstractStreamCompression
 {
 	protected const string CompressionLevelProp = "x";
 
 	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
 	{
-		[CompressionLevelProp] = "9"
+		[CompressionLevelProp] = "3"
 	};
 
-	public DeflateCompression() : base("Deflate")
+	public BrotliCompression() : base("Brotli")
 	{
 	}
 
 	public override Stream Compress(Stream uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		return new DeflateStream(
+		return new BrotliStream(
 			uncompressed,
-			SharpCompress.Compressors.CompressionMode.Compress,
-			(CompressionLevel)int.Parse(props[CompressionLevelProp]),
-			Encoding.UTF8);
+			(CompressionLevel)int.Parse(props[CompressionLevelProp]));
 	}
 
 	public override Stream Decompress(Stream compressed)
 	{
-		return new DeflateStream(
+		return new BrotliStream(
 			compressed,
-			SharpCompress.Compressors.CompressionMode.Decompress,
-			CompressionLevel.Default,
-			Encoding.UTF8);
+			CompressionMode.Decompress);
 	}
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props) => props.ContainsKey(CompressionLevelProp)

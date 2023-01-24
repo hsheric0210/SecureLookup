@@ -6,7 +6,7 @@ public abstract class AbstractPasswordHash
 
 	protected AbstractPasswordHash(string algorithmName) => AlgorithmName = algorithmName;
 
-	public abstract byte[] Hash(byte[] password, int desiredLength, byte[] salt, IReadOnlyDictionary<string, string> props);
+	public abstract ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> password, int desiredLength, ReadOnlySpan<byte> salt, IReadOnlyDictionary<string, string> props);
 	public abstract bool IsPropertiesValid(IReadOnlyDictionary<string, string> props);
 }
 

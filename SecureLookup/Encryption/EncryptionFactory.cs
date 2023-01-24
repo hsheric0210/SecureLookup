@@ -6,7 +6,10 @@ public static class EncryptionFactory
 	private static readonly ICollection<AbstractEncryption> registeredEncryptions = new List<AbstractEncryption>()
 	{
 		new AesGcmEncryption(),
-		new AesCbcEncryption()
+		new AesCbcEncryption(),
+		new ChaCha20Poly1305Encryption(),
+		new Cast5Encryption(),
+		new Cast6Encryption(),
 	};
 
 	/// <summary>
@@ -22,7 +25,7 @@ public static class EncryptionFactory
 	/// <param name="key">Encryption key</param>
 	/// <returns>Encrypted data in XML DTO form</returns>
 	/// <exception cref="NotImplementedException">If there're no encryption named <paramref name="algorithmName"/> found</exception>
-	public static DbEncryptionEntry Encrypt(string algorithmName, byte[] plaintext, byte[] key, out byte[] data)
+	public static DbEncryptionEntry Encrypt(string algorithmName, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key, out ReadOnlySpan<byte> data)
 	{
 		AbstractEncryption enc = Lookup(algorithmName);
 		EncryptedData encrypted = enc.TryEncrypt(plaintext, key);
@@ -36,7 +39,7 @@ public static class EncryptionFactory
 		};
 	}
 
-	public static DbEncryptionEntry Encrypt(string algorithmName, byte[] plaintext, byte[] key) => Encrypt(algorithmName, plaintext, key, out _);
+	public static DbEncryptionEntry Encrypt(string algorithmName, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key) => Encrypt(algorithmName, plaintext, key, out _);
 
 	/// <summary>
 	/// Decrypts specified encrypted entry with specified key
@@ -44,7 +47,7 @@ public static class EncryptionFactory
 	/// <param name="entry">Encrypted data in XML DTO form</param>
 	/// <param name="key">Decryption key</param>
 	/// <returns></returns>
-	public static byte[] Decrypt(DbEncryptionEntry entry, byte[] key)
+	public static ReadOnlySpan<byte> Decrypt(DbEncryptionEntry entry, ReadOnlySpan<byte> key)
 	{
 		var encrypted = new EncryptedData(
 			entry.DataBytes,

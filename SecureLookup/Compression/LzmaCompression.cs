@@ -14,7 +14,7 @@ namespace SecureLookup.Compression;
 /// <item><see href="https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/tests/SharpCompress.Test/Streams/LzmaStreamTests.cs#L564"/></item>
 /// </list>
 /// </summary>
-internal class LzmaCompression : AbstractCompression
+internal class LzmaCompression : AbstractStreamCompression
 {
 	protected const string DictionarySizeProp = "d";
 	protected const string MatchFinderProp = "mf";
@@ -22,63 +22,49 @@ internal class LzmaCompression : AbstractCompression
 	protected const string LiteralContextBitsProp = "lc";
 	protected const string LiteralPosBitsProp = "lp";
 	protected const string PosStateBitsProp = "pb";
-	private const int BufferSize = 8192;
+
+	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
+	{
+		[DictionarySizeProp] = "27",
+		[MatchFinderProp] = "bt4",
+		[NumFastBytesProp] = "32",
+		[LiteralContextBitsProp] = "3",
+		[LiteralPosBitsProp] = "0",
+		[PosStateBitsProp] = "2"
+	};
 
 	public LzmaCompression() : base("LZMA")
 	{
 	}
 
-	public override byte[] Compress(byte[] uncompressed, IReadOnlyDictionary<string, string> props)
+	public override Stream Compress(Stream uncompressed, IReadOnlyDictionary<string, string> props)
 	{
 		var dictSize = int.Parse(props[DictionarySizeProp]);
 		if (dictSize <= 32)
 			dictSize = 2 << dictSize;
-		using var outStream = new MemoryStream();
-		using (var inStream = new MemoryStream(uncompressed))
-		{
-			LzmaEncoderProperties prop = CreateEncoderProperties(
-				dictSize,
-				props[MatchFinderProp],
-				int.Parse(props[NumFastBytesProp]),
-				int.Parse(props[LiteralContextBitsProp]),
-				int.Parse(props[LiteralPosBitsProp]),
-				int.Parse(props[PosStateBitsProp]));
-			using var compress = new LzmaStream(prop, false, outStream);
-			outStream.Write(compress.Properties);
-			outStream.Write(BitConverter.GetBytes(uncompressed.LongLength));
-			inStream.CopyTo(compress);
-		}
-		return outStream.ToArray();
+		LzmaEncoderProperties prop = CreateEncoderProperties(
+			dictSize,
+			props[MatchFinderProp],
+			int.Parse(props[NumFastBytesProp]),
+			int.Parse(props[LiteralContextBitsProp]),
+			int.Parse(props[LiteralPosBitsProp]),
+			int.Parse(props[PosStateBitsProp]));
+		var outStream = new MemoryStream((int)uncompressed.Length);
+		using var compress = new LzmaStream(prop, false, outStream);
+		outStream.Write(compress.Properties);
+		outStream.Write(BitConverter.GetBytes(uncompressed.Length));
+		uncompressed.CopyTo(compress);
+		return outStream;
 	}
 
-	public override byte[] Decompress(byte[] compressed)
+	public override Stream Decompress(Stream compressed)
 	{
-		using var outStream = new MemoryStream();
-		using (var inStream = new MemoryStream(compressed))
-		{
-			if (inStream.Length < 5)
-				throw new AggregateException($"LZMA header too short. ({inStream.Length} bytes)");
-			var propsBytes = new byte[5];
-			var outSizeBytes = new byte[sizeof(long)];
-			inStream.Read(propsBytes);
-			inStream.Read(outSizeBytes);
-			var outSize = BitConverter.ToInt64(outSizeBytes);
-
-			// https://github.com/adamhathcock/sharpcompress/blob/d1ea8517d22cbb3b4401485e543ce3db04f25516/tests/SharpCompress.Test/Streams/LzmaStreamTests.cs#L564
-			using var decompress = new LzmaStream(propsBytes, inStream, compressed.Length, -1, null, false);
-			var buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
-			long totalRead = 0;
-			while (totalRead < outSize)
-			{
-				var read = decompress.Read(buffer, 0, (int)Math.Min(buffer.Length, outSize - totalRead));
-				if (read <= 0)
-					break;
-				outStream.Write(buffer, 0, read);
-				totalRead += read;
-			}
-			ArrayPool<byte>.Shared.Return(buffer);
-		}
-		return outStream.ToArray();
+		var props = compressed.ReadBytes(5);
+		var uncompressedLen = compressed.ReadLong();
+		using var decompress = new LzmaStream(props, compressed, compressed.Length, -1, null, false);
+		var ms = new MemoryStream((int)uncompressedLen);
+		decompress.CopyTo(ms, uncompressedLen);
+		return ms;
 	}
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props)

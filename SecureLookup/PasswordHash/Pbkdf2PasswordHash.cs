@@ -11,11 +11,7 @@ internal abstract class Pbkdf2PasswordHash : AbstractPasswordHash
 
 	protected Pbkdf2PasswordHash(HashAlgorithmName hashAlgorithmName) : base("PBKDF2-HMAC-" + hashAlgorithmName.ToString()) => HashAlgorithmName = hashAlgorithmName;
 
-	public override byte[] Hash(byte[] password, int desiredLength, byte[] salt, IReadOnlyDictionary<string, string> props)
-	{
-		var pbkdf2 = new Rfc2898DeriveBytes(password, salt, int.Parse(props[IterationsProp]), HashAlgorithmName);
-		return pbkdf2.GetBytes(desiredLength);
-	}
+	public override ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> password, int desiredLength, ReadOnlySpan<byte> salt, IReadOnlyDictionary<string, string> props) => Rfc2898DeriveBytes.Pbkdf2(password, salt, int.Parse(props[IterationsProp]), HashAlgorithmName, desiredLength);
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props) => props.ContainsKey(IterationsProp) && int.TryParse(props[IterationsProp], out _);
 }

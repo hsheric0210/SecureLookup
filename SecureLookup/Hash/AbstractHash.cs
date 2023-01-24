@@ -5,5 +5,5 @@ public abstract class AbstractHash
 
 	protected AbstractHash(string algorithmName) => AlgorithmName = algorithmName;
 
-	public abstract byte[] Hash(byte[] data);
+	public abstract ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> data);
 }

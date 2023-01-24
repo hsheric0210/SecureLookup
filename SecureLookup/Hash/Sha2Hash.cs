@@ -7,5 +7,5 @@ internal class Sha2Hash : AbstractHash
 	{
 	}
 
-	public override byte[] Hash(byte[] data) => SHA512.Create().ComputeHash(data);
+	public override ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> data) => SHA512.HashData(data);
 }

@@ -21,7 +21,7 @@ public static class DatabaseSaveExtension
 	{
 		DbOuterRoot outer = database.OuterRoot;
 		RandomizeParameters(outer);
-		var key = SecondaryPasswordHash(outer, database.PasswordHash);
+		ReadOnlySpan<byte> key = SecondaryPasswordHash(outer, database.PasswordHash);
 		database.OuterRoot.Encryption = EncryptAndHash(outer, CompressInner(outer.Compression, SerializeInner(database.InnerRoot)), key);
 		SerializeAndWriteOuter(database.OuterRoot, database.Source);
 	}
@@ -41,12 +41,12 @@ public static class DatabaseSaveExtension
 		}
 	}
 
-	private static byte[] CompressInner(DbCompressionEntry entry, byte[] inner)
+	private static ReadOnlySpan<byte> CompressInner(DbCompressionEntry entry, ReadOnlySpan<byte> inner)
 	{
 		try
 		{
-			var compressed = CompressionFactory.Compress(entry, inner);
-			Console.WriteLine($"Database compression ratio: {(double)compressed.LongLength * 100 / inner.LongLength}%");
+			ReadOnlySpan<byte> compressed = CompressionFactory.Compress(entry, inner);
+			Console.WriteLine($"Database compression ratio: {(double)compressed.Length * 100 / inner.Length}%");
 			return compressed;
 		}
 		catch (Exception ex)
@@ -68,7 +68,7 @@ public static class DatabaseSaveExtension
 		}
 	}
 
-	private static byte[] SecondaryPasswordHash(DbOuterRoot outer, byte[] passwordHash)
+	private static ReadOnlySpan<byte> SecondaryPasswordHash(DbOuterRoot outer, ReadOnlySpan<byte> passwordHash)
 	{
 		try
 		{
@@ -80,12 +80,12 @@ public static class DatabaseSaveExtension
 		}
 	}
 
-	private static DbEncryptionEntry EncryptAndHash(DbOuterRoot outer, byte[] plaintext, byte[] key)
+	private static DbEncryptionEntry EncryptAndHash(DbOuterRoot outer, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key)
 	{
 		try
 		{
-			DbEncryptionEntry encrypted = EncryptionFactory.Encrypt(outer.Encryption.AlgorithmName, plaintext, key, out byte[] data);
-			outer.Hash.HashBytes = HashFactory.Hash(outer.Hash.AlgorithmName, data);
+			DbEncryptionEntry encrypted = EncryptionFactory.Encrypt(outer.Encryption.AlgorithmName, plaintext, key, out ReadOnlySpan<byte> data);
+			outer.Hash.HashBytes = HashFactory.Hash(outer.Hash.AlgorithmName, data).ToArray();
 			return encrypted;
 		}
 		catch (Exception ex)

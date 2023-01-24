@@ -13,9 +13,9 @@ internal class SCryptPasswordHash : AbstractPasswordHash
 	{
 	}
 
-	public override byte[] Hash(byte[] password, int desiredLength, byte[] salt, IReadOnlyDictionary<string, string> props)
+	public override ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> password, int desiredLength, ReadOnlySpan<byte> salt, IReadOnlyDictionary<string, string> props)
 	{
-		return SCrypt.Generate(password, salt, int.Parse(props[CostFactorProp]), int.Parse(props[BlockSizeFactorProp]), int.Parse(props[ParallelizationFactorProp]), desiredLength);
+		return SCrypt.Generate(password.ToArray(), salt.ToArray(), int.Parse(props[CostFactorProp]), int.Parse(props[BlockSizeFactorProp]), int.Parse(props[ParallelizationFactorProp]), desiredLength);
 	}
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props)

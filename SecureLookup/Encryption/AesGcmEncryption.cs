@@ -12,7 +12,7 @@ internal class AesGcmEncryption : AbstractEncryption
 	{
 	}
 
-	protected override EncryptedData Encrypt(byte[] plaintext, byte[] key)
+	protected override EncryptedData Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key)
 	{
 		var cipherText = new byte[plaintext.Length];
 		var seed = RandomNumberGenerator.GetBytes(SeedSize);
@@ -22,7 +22,7 @@ internal class AesGcmEncryption : AbstractEncryption
 		return new EncryptedData(cipherText, seed, tag);
 	}
 
-	protected override byte[] Decrypt(EncryptedData encrypted, byte[] key)
+	protected override ReadOnlySpan<byte> Decrypt(EncryptedData encrypted, ReadOnlySpan<byte> key)
 	{
 		var plainText = new byte[encrypted.Data.Length];
 		using var cipher = new AesGcm(key);

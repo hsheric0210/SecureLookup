@@ -11,13 +11,13 @@ public abstract class AbstractEncryption
 
 	protected AbstractEncryption(string algorithmName) => AlgorithmName = algorithmName;
 
-	public EncryptedData TryEncrypt(byte[] plaintext, byte[] key)
+	public EncryptedData TryEncrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key)
 	{
 		ValidateKeyLength(key.Length);
 		return Encrypt(plaintext, key);
 	}
 
-	public byte[] TryDecrypt(EncryptedData encrypted, byte[] key)
+	public ReadOnlySpan<byte> TryDecrypt(EncryptedData encrypted, ReadOnlySpan<byte> key)
 	{
 		ValidateKeyLength(key.Length);
 		if (encrypted.Seed.Length != SeedSize)
@@ -34,9 +34,9 @@ public abstract class AbstractEncryption
 	}
 
 	#region Abstract methods
-	protected abstract EncryptedData Encrypt(byte[] plaintext, byte[] key);
+	protected abstract EncryptedData Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key);
 
-	protected abstract byte[] Decrypt(EncryptedData encrypted, byte[] key);
+	protected abstract ReadOnlySpan<byte> Decrypt(EncryptedData encrypted, ReadOnlySpan<byte> key);
 	#endregion
 }
 

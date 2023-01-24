@@ -1,5 +1,4 @@
-﻿using SharpCompress.Compressors.PPMd;
-using System.Buffers.Binary;
+﻿using ZstdNet;
 
 namespace SecureLookup.Compression;
 /*
@@ -30,51 +29,37 @@ System.AggregateException: Deserialization failure (There is an error in XML doc
    at SecureLookup.Db.DatabaseLoader.Run(String source, Byte[] password) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 21
    at SecureLookup.Program..ctor(String dbFile, String password, Boolean loop, String[] args) in D:\Repo\SecureLookup\SecureLookup\Program.cs:line 127
  */
-internal class PPMdCompression : AbstractStreamCompression
+internal class ZstdCompression : AbstractStreamCompression
 {
-	protected const string AllocatorSizeProp = "mem";
-	protected const string ModelOrderProp = "o";
+	protected const string CompressionLevel = "x";
 
 	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
 	{
-		[AllocatorSizeProp] = "27",
-		[ModelOrderProp] = "8"
+		[CompressionLevel] = CompressionOptions.MaxCompressionLevel.ToString()
 	};
 
-	public PPMdCompression() : base("PPMd")
+	public ZstdCompression() : base("Zstd")
 	{
 	}
 
 	public override Stream Compress(Stream uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		var allocatorSize = int.Parse(props[AllocatorSizeProp]);
-		if (allocatorSize <= 32)
-			allocatorSize = 2 << allocatorSize;
-		var modelOrder = int.Parse(props[ModelOrderProp]);
-		var ppmdProps = new PpmdProperties(allocatorSize, modelOrder);
+		var zstdProps = new CompressionOptions(int.Parse(props[CompressionLevel]));
 		var outStream = new MemoryStream();
-		outStream.Write(ppmdProps.Properties);
 		outStream.Write(BitConverter.GetBytes(uncompressed.Length));
-		using var compress = new PpmdStream(ppmdProps, outStream, true);
+		using var compress = new CompressionStream(outStream, zstdProps);
 		uncompressed.CopyTo(compress);
 		return outStream;
 	}
 
 	public override Stream Decompress(Stream compressed)
 	{
-		var props = compressed.ReadBytes(2);
 		var uncompressedLen = compressed.ReadLong();
-		using var decompress = new PpmdStream(new PpmdProperties(props), compressed, false);
 		var outStream = new MemoryStream((int)uncompressedLen);
+		using var decompress = new DecompressionStream(compressed);
 		decompress.CopyTo(outStream, uncompressedLen);
 		return outStream;
 	}
 
-	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props)
-	{
-		return props.ContainsKey(AllocatorSizeProp)
-			&& props.ContainsKey(ModelOrderProp)
-			&& int.TryParse(props[AllocatorSizeProp], out _)
-			&& int.TryParse(props[ModelOrderProp], out _);
-	}
+	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props) => props.ContainsKey(CompressionLevel) && int.TryParse(props[CompressionLevel], out _);
 }

@@ -1,5 +1,5 @@
-﻿using SharpCompress.Compressors.PPMd;
-using System.Buffers.Binary;
+﻿using K4os.Compression.LZ4;
+using K4os.Compression.LZ4.Streams;
 
 namespace SecureLookup.Compression;
 /*
@@ -30,51 +30,76 @@ System.AggregateException: Deserialization failure (There is an error in XML doc
    at SecureLookup.Db.DatabaseLoader.Run(String source, Byte[] password) in D:\Repo\SecureLookup\SecureLookup\Db\DatabaseLoader.cs:line 21
    at SecureLookup.Program..ctor(String dbFile, String password, Boolean loop, String[] args) in D:\Repo\SecureLookup\SecureLookup\Program.cs:line 127
  */
-internal class PPMdCompression : AbstractStreamCompression
+internal class LZ4Compression : AbstractStreamCompression
 {
-	protected const string AllocatorSizeProp = "mem";
-	protected const string ModelOrderProp = "o";
+	protected const string ChainBlocks = "cb";
+	protected const string BlockSize = "bs";
+	protected const string ContentChecksum = "cc";
+	protected const string BlockChecksum = "bc";
+	protected const string CompressionLevel = "x";
+	protected const string ExtraMemory = "mem";
 
 	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
 	{
-		[AllocatorSizeProp] = "27",
-		[ModelOrderProp] = "8"
+		[ChainBlocks] = "true",
+		[BlockSize] = "65536",
+		[ContentChecksum] = "true",
+		[BlockChecksum] = "true",
+		[CompressionLevel] = ((int)LZ4Level.L12_MAX).ToString(),
+		[ExtraMemory] = "256"
 	};
 
-	public PPMdCompression() : base("PPMd")
+	public LZ4Compression() : base("LZ4")
 	{
 	}
 
 	public override Stream Compress(Stream uncompressed, IReadOnlyDictionary<string, string> props)
 	{
-		var allocatorSize = int.Parse(props[AllocatorSizeProp]);
-		if (allocatorSize <= 32)
-			allocatorSize = 2 << allocatorSize;
-		var modelOrder = int.Parse(props[ModelOrderProp]);
-		var ppmdProps = new PpmdProperties(allocatorSize, modelOrder);
-		var outStream = new MemoryStream();
-		outStream.Write(ppmdProps.Properties);
+		var settings = new LZ4EncoderSettings()
+		{
+			ContentLength = uncompressed.Length,
+			ChainBlocks = bool.Parse(props[ChainBlocks]),
+			BlockSize = int.Parse(props[BlockSize]),
+			ContentChecksum = bool.Parse(props[ContentChecksum]),
+			BlockChecksum = bool.Parse(props[BlockChecksum]),
+			CompressionLevel = (LZ4Level)int.Parse(props[ChainBlocks]),
+			ExtraMemory = int.Parse(props[ExtraMemory])
+		};
+		var outStream = new MemoryStream((int)uncompressed.Length);
+		outStream.Write(BitConverter.GetBytes(settings.ExtraMemory));
 		outStream.Write(BitConverter.GetBytes(uncompressed.Length));
-		using var compress = new PpmdStream(ppmdProps, outStream, true);
+		using LZ4EncoderStream compress = LZ4Stream.Encode(outStream, settings);
 		uncompressed.CopyTo(compress);
 		return outStream;
 	}
 
 	public override Stream Decompress(Stream compressed)
 	{
-		var props = compressed.ReadBytes(2);
+		var settings = new LZ4DecoderSettings()
+		{
+			ExtraMemory = (int)compressed.ReadLong()
+		};
+
 		var uncompressedLen = compressed.ReadLong();
-		using var decompress = new PpmdStream(new PpmdProperties(props), compressed, false);
 		var outStream = new MemoryStream((int)uncompressedLen);
+		using LZ4DecoderStream decompress = LZ4Stream.Decode(compressed, settings);
 		decompress.CopyTo(outStream, uncompressedLen);
 		return outStream;
 	}
 
 	public override bool IsPropertiesValid(IReadOnlyDictionary<string, string> props)
 	{
-		return props.ContainsKey(AllocatorSizeProp)
-			&& props.ContainsKey(ModelOrderProp)
-			&& int.TryParse(props[AllocatorSizeProp], out _)
-			&& int.TryParse(props[ModelOrderProp], out _);
+		return props.ContainsKey(ChainBlocks)
+			&& props.ContainsKey(BlockSize)
+			&& props.ContainsKey(ContentChecksum)
+			&& props.ContainsKey(BlockChecksum)
+			&& props.ContainsKey(CompressionLevel)
+			&& props.ContainsKey(ExtraMemory)
+			&& bool.TryParse(props[ChainBlocks], out _)
+			&& int.TryParse(props[BlockSize], out _)
+			&& bool.TryParse(props[ContentChecksum], out _)
+			&& bool.TryParse(props[BlockChecksum], out _)
+			&& ushort.TryParse(props[CompressionLevel], out _)
+			&& int.TryParse(props[ExtraMemory], out _);
 	}
 }

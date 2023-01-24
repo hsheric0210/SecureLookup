@@ -11,12 +11,12 @@ internal abstract class Argon2PasswordHash : AbstractPasswordHash
 
 	protected Argon2PasswordHash(string typeSuffix) : base("Argon2" + typeSuffix) { }
 
-	public abstract Argon2 GetInstance(byte[] password);
+	public abstract Argon2 GetInstance(ReadOnlySpan<byte> password);
 
-	public override byte[] Hash(byte[] password, int desiredLength, byte[] salt, IReadOnlyDictionary<string, string> props)
+	public override ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> password, int desiredLength, ReadOnlySpan<byte> salt, IReadOnlyDictionary<string, string> props)
 	{
 		Argon2 argon2 = GetInstance(password);
-		argon2.Salt = salt;
+		argon2.Salt = salt.ToArray();
 		argon2.Iterations = int.Parse(props[IterationsProp]);
 		argon2.MemorySize = int.Parse(props[MemorySizeProp]);
 		argon2.DegreeOfParallelism = int.Parse(props[ParallelismProp]);
@@ -40,7 +40,7 @@ internal class Argon2iPasswordHash : Argon2PasswordHash
 	{
 	}
 
-	public override Argon2 GetInstance(byte[] password) => new Argon2i(password);
+	public override Argon2 GetInstance(ReadOnlySpan<byte> password) => new Argon2i(password.ToArray());
 }
 
 internal class Argon2dPasswordHash : Argon2PasswordHash
@@ -49,7 +49,7 @@ internal class Argon2dPasswordHash : Argon2PasswordHash
 	{
 	}
 
-	public override Argon2 GetInstance(byte[] password) => new Argon2d(password);
+	public override Argon2 GetInstance(ReadOnlySpan<byte> password) => new Argon2d(password.ToArray());
 }
 
 internal class Argon2idPasswordHash : Argon2PasswordHash
@@ -58,5 +58,5 @@ internal class Argon2idPasswordHash : Argon2PasswordHash
 	{
 	}
 
-	public override Argon2 GetInstance(byte[] password) => new Argon2id(password);
+	public override Argon2 GetInstance(ReadOnlySpan<byte> password) => new Argon2id(password.ToArray());
 }

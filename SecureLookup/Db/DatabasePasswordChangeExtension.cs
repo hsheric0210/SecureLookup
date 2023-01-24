@@ -22,7 +22,7 @@ public static class DatabasePasswordChangeExtension
 		if (!EncryptionFactory.GetAvailableAlgorithms().Any(avail => avail.Equals(newEncryptionAlgorithm, StringComparison.OrdinalIgnoreCase)))
 			throw new NotSupportedException("Unsupported encryption algorithm: " + newEncryptionAlgorithm);
 
-		database.PasswordHash = outer.PrimaryHashPassword(newPassword);
+		database.PasswordHash = outer.PrimaryHashPassword(newPassword).ToArray();
 	}
 
 	private static void RandomizeAnything(this DbOuterRoot outer)

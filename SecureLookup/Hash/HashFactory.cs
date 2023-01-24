@@ -20,7 +20,7 @@ public static class HashFactory
 	/// <param name="algorithmName">Name of hashing algorithm</param>
 	/// <param name="data">Data to hash</param>
 	/// <returns>The hash</returns>
-	public static byte[] Hash(string algorithmName, byte[] data)
+	public static ReadOnlySpan<byte> Hash(string algorithmName, ReadOnlySpan<byte> data)
 	{
 		AbstractHash hash = Lookup(algorithmName);
 		return hash.Hash(data);
@@ -32,7 +32,7 @@ public static class HashFactory
 	/// <param name="entry">The stored hash, in XML DTO form</param>
 	/// <param name="data">Data to compare hash</param>
 	/// <returns><c>true</c> if both hash equals, <c>false</c> if hash mismatched</returns>
-	public static bool Verify(DbHashEntry entry, byte[] data, out byte[] hash)
+	public static bool Verify(DbHashEntry entry, ReadOnlySpan<byte> data, out ReadOnlySpan<byte> hash)
 	{
 		AbstractHash hasher = Lookup(entry.AlgorithmName);
 		var expected = Convert.FromHexString(entry.Hash);

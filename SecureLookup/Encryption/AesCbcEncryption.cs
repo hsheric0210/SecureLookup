@@ -12,27 +12,22 @@ internal class AesCbcEncryption : AbstractEncryption
 	{
 	}
 
-	protected override EncryptedData Encrypt(byte[] plaintext, byte[] key)
+	protected override EncryptedData Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> key)
 	{
 		var seed = RandomNumberGenerator.GetBytes(SeedSize);
 		using var cipher = Aes.Create();
-		cipher.KeySize = KeySize * 8;
-		cipher.Key = key;
-		cipher.IV = seed;
+		cipher.KeySize = KeySize * 8; // AES-256
+		cipher.Key = key.ToArray();
 		cipher.Mode = CipherMode.CBC;
-		cipher.Padding = PaddingMode.PKCS7;
-		return new EncryptedData(cipher.CreateEncryptor().TransformFinalBlock(plaintext, 0, plaintext.Length), Array.Empty<byte>(), seed);
+		return new EncryptedData(cipher.EncryptCbc(plaintext, seed, PaddingMode.PKCS7), Array.Empty<byte>(), seed);
 	}
 
-	protected override byte[] Decrypt(EncryptedData encrypted, byte[] key)
+	protected override ReadOnlySpan<byte> Decrypt(EncryptedData encrypted, ReadOnlySpan<byte> key)
 	{
 		using var cipher = Aes.Create();
 		cipher.KeySize = KeySize * 8; // AES-256
-		cipher.Key = key;
-		cipher.IV = encrypted.Seed;
+		cipher.Key = key.ToArray();
 		cipher.Mode = CipherMode.CBC;
-		cipher.Padding = PaddingMode.PKCS7;
-		var ciphertext = encrypted.Data;
-		return cipher.CreateDecryptor().TransformFinalBlock(ciphertext, 0, ciphertext.Length);
+		return cipher.DecryptCbc(encrypted.Data, encrypted.Seed, PaddingMode.PKCS7);
 	}
 }
