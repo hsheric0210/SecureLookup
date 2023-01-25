@@ -12,13 +12,12 @@ public static class DatabaseCreator
 	public static Database Create(string destination, byte[] password, DatabaseCreationParameter param)
 	{
 		DbOuterRoot outer = PrepareOuter(param);
-		var pwHash = outer.PrimaryHashPassword(password);
 		var db = new Database()
 		{
 			Source = destination,
 			OuterRoot = outer,
 			InnerRoot = new DbInnerRoot(),
-			PasswordHash = pwHash.ToArray()
+			PasswordHash = outer.PrimaryHashPassword(password).ToArray()
 		};
 		db.Save();
 		return db;
@@ -26,22 +25,22 @@ public static class DatabaseCreator
 
 	private static DbOuterRoot PrepareOuter(DatabaseCreationParameter param)
 	{
-		var outer = new DbOuterRoot();
+		return new DbOuterRoot
+		{
+			// Password hashing
+			PrimaryPasswordHashSize = param.PrimaryPasswordHashSize,
+			PrimaryPasswordHashing = CreatePasswordHashing(param.PrimaryPasswordHashingAlgorithm, param.PrimaryPasswordHashingProperties),
+			SecondaryPasswordHashing = CreatePasswordHashing(param.SecondaryPasswordHashingAlgorithm, param.SecondaryPasswordHashingProperties),
 
-		// Password hashing
-		outer.PrimaryPasswordHashing = CreatePasswordHashing(param.PrimaryPasswordHashingAlgorithm, param.PrimaryPasswordHashingProperties);
-		outer.PrimaryPasswordHashSize = param.PrimaryPasswordHashSize;
-		outer.SecondaryPasswordHashing = CreatePasswordHashing(param.SecondaryPasswordHashingAlgorithm, param.SecondaryPasswordHashingProperties);
+			// Compression
+			Compression = CreateCompression(param.DatabaseCompressionAlgorithm, param.DatabaseCompressionProperties),
 
-		// Compression
-		outer.Compression = CreateCompression(param.DatabaseCompressionAlgorithm, param.DatabaseCompressionProperties);
+			// Hash
+			Hash = CreateHash(param.DatabaseHashingAlgorithm),
 
-		// Hash
-		outer.Hash = CreateHash(param.DatabaseHashingAlgorithm);
-
-		// Encryption
-		outer.Encryption = CreateEncryption(param.DatabaseEncryptionAlgorithm);
-		return outer;
+			// Encryption
+			Encryption = CreateEncryption(param.DatabaseEncryptionAlgorithm)
+		};
 	}
 
 	private static DbPasswordHashingEntry CreatePasswordHashing(string algorithmName, string? props)
@@ -51,13 +50,13 @@ public static class DatabaseCreator
 		{
 			props = hash.DefaultProperties is null ? "" : PropertiesUtils.Serialize(hash.DefaultProperties);
 			if (hash.DefaultProperties is not null)
-				Console.WriteLine("Using default password hashing properties: " + props);
+				Console.WriteLine($"Using default password hashing properties for {hash.AlgorithmName}: {props}");
 		}
 		if (!hash.IsPropertiesValid(PropertiesUtils.Deserialize(props)))
 			throw new ArgumentException("Invalid properties: " + props);
 		return new DbPasswordHashingEntry
 		{
-			AlgorithmName = algorithmName,
+			AlgorithmName = hash.AlgorithmName,
 			SaltBytes = RandomNumberGenerator.GetBytes(hash.SaltSize),
 			Properties = props,
 		};
@@ -70,32 +69,32 @@ public static class DatabaseCreator
 		{
 			props = compression.DefaultProperties is null ? "" : PropertiesUtils.Serialize(compression.DefaultProperties);
 			if (compression.DefaultProperties is not null)
-				Console.WriteLine("Using default compressor properties: " + props);
+				Console.WriteLine("Using default compressor properties for " + compression.AlgorithmName + ": " + props);
 		}
 		if (!compression.IsPropertiesValid(PropertiesUtils.Deserialize(props)))
 			throw new ArgumentException("Invalid properties: " + props);
 		return new DbCompressionEntry
 		{
-			AlgorithmName = algorithmName,
+			AlgorithmName = compression.AlgorithmName,
 			Properties = props
 		};
 	}
 
 	private static DbHashEntry CreateHash(string algorithmName)
 	{
-		_ = HashFactory.Lookup(algorithmName);
+		AbstractHash hash = HashFactory.Lookup(algorithmName);
 		return new DbHashEntry
 		{
-			AlgorithmName = algorithmName
+			AlgorithmName = hash.AlgorithmName
 		};
 	}
 
 	private static DbEncryptionEntry CreateEncryption(string algorithmName)
 	{
-		_ = EncryptionFactory.Lookup(algorithmName);
+		AbstractEncryption encryption = EncryptionFactory.Lookup(algorithmName);
 		return new DbEncryptionEntry
 		{
-			AlgorithmName = algorithmName
+			AlgorithmName = encryption.AlgorithmName
 		};
 	}
 }

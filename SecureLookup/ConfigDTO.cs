@@ -15,4 +15,10 @@ public class ConfigRoot
 
 	[XmlElement("unarchiverParameter")]
 	public string UnarchiverParameter { get; set; } = "x -t7z -p\"{Password}\" -o\"{Target}\" -slp -bt -bb3 -bsp1 -sae -y -- \"{Archive}\"";
+
+	[XmlElement("batchArchiver")]
+	public string BatchArchiverExecutable { get; set; } = "";
+
+	[XmlElement("batchArchiverParameter")]
+	public string BatchArchiverParameter { get; set; } = "-batch \"{BatchFile}\"";
 }

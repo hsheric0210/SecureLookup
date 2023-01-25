@@ -1,6 +1,8 @@
 ﻿using SecureLookup.Commands;
 using SecureLookup.Db;
 using SecureLookup.Parameter;
+using StringTokenFormatter;
+using System.Diagnostics;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -18,6 +20,8 @@ public class Program
 	public string DbPath { get; set; }
 	public CommandFactory CommandFactory { get; }
 	public ConfigRoot Config { get; }
+
+	public ISet<string> BatchCompresingFiles { get; set; } = new HashSet<string>();
 
 	public static void Main(params string[] args)
 	{
@@ -69,7 +73,9 @@ public class Program
 
 		if (!string.IsNullOrWhiteSpace(param.BatchFile) && new FileInfo(param.BatchFile).Exists)
 		{
+			instance.Backup();
 			instance.BatchExecute(param.BatchFile);
+			instance.Exit(false);
 			return;
 		}
 
@@ -167,6 +173,20 @@ public class Program
 		serializer.Serialize(xw, config);
 	}
 
+	public void Backup()
+	{
+		try
+		{
+			var inf = new FileInfo(DbPath);
+			if (inf.Exists)
+				inf.CopyTo($"{inf.FullName}.{DateTime.Now:yyyy-MM-dd-HH-mm-ss.ffff}.bak");
+		}
+		catch
+		{
+			// ignored
+		}
+	}
+
 	private void BatchExecute(string batchFile)
 	{
 		IList<string> lines;
@@ -213,6 +233,38 @@ public class Program
 		loop = false;
 		if (!discard && Database.Dirty)
 			SaveDb();
+		if (BatchCompresingFiles.Count > 0)
+		{
+			if (!string.IsNullOrWhiteSpace(Config.BatchArchiverExecutable) && new FileInfo(Config.BatchArchiverExecutable).Exists)
+			{
+				Task.Run(() =>
+				{
+					foreach (var batch in BatchCompresingFiles)
+					{
+						try
+						{
+							var proc = new Process();
+							proc.StartInfo.FileName = Config.BatchArchiverExecutable;
+							proc.StartInfo.Arguments = Config.BatchArchiverParameter.FormatToken(new { BatchFile = batch });
+							proc.StartInfo.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+							proc.StartInfo.UseShellExecute = true;
+							proc.Start();
+							proc.WaitForExit();
+							Shell32.MoveToRecycleBin(batch);
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine("Failed to finish batch archiving");
+							Console.WriteLine(ex);
+						}
+					}
+				}).Wait();
+			}
+			else
+			{
+				Console.WriteLine("Batch archiver not found: " + Config.BatchArchiverExecutable);
+			}
+		}
 	}
 
 	/// <summary>

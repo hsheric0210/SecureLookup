@@ -64,8 +64,7 @@ internal class AddCommandParameter
 	public bool NoArchive { get; set; }
 
 	[ParameterAlias("AppendTo", "Append")]
-	[ParameterDescription(@"INSTEAD OF RUNNING ARCHIVER(Implicit '-NoArchive' switch), Append the generated(or specified) informations to specified file to support external archiving tools, in following format: <originalFileName>:<archiveFileName>:<password>
-WARNING: You *MUST* run external archiving tools to archive your files")]
+	[ParameterDescription("INSTEAD OF RUNNING ARCHIVER(Implicit '-NoArchive' switch), Append the generated(or specified) informations to specified file to support external archiving tools, in following format: <originalFileName>:<archiveFileName>:<password> and run the batch archiver configured at config on program exits with 'Exit' command")]
 	public string? AppendLogTo { get; set; }
 
 	[ParameterAlias("PreviousHandling", "PrevHandling", "PrevHandle")]
@@ -79,18 +78,6 @@ WARNING: You *MUST* run external archiving tools to archive your files")]
 	[ParameterAlias("ReuseName", "Reuse")]
 	[ParameterDescription("When overwriting the existing entry, should we have to re-use previous archive name instead of generating new archive name?")]
 	public bool ReusePreviousName { get; set; }
-
-	/*
-	FIXME
-	엔트리를 실수러 덮어써서 이전의 아카이브로 돌아가야할 때, 아카이브 이름도 (기본적으로) 새로 배정되고, 비밀번호도 바뀌기에
-	PreviousArchiveHandling을 remove가 아닌 다른 것으로 하여 아카이브 자체를 보존하더라도, 더 이상 그 아카이브는 열 수가 없게 되어 버리고, 그 내용물도 무엇의 이전 버전(백업)인지 알 수가 없게 되는 문제가 있음
-
-	해결 방안:
-	* 아카이브 엔트리를 '덮어쓰지'않는다. 새로운 엔트리가 추가되면, 이전의 동일한 이름을 가진 엔트리(들)은 단지 특정 플래그를 활성화함으로써 기본적으로 Filter에서 검색되지 않도록 한다. 이러한 '이전 버전' 엔트리들은, '이전 버전' 백업 파일들을 '직접 삭제'한 후, clean 명령을 통해 지울 수 있다. (단 특수 옵션을 지정하는 경우에는 모두 검색 가능하게 해야 함)
-	 -> 먼저 DTO쪽에서 Entry를 보관하는 Collection을 HashSet이 아닌, List를 쓰도록 한다.
-	 -> 밑 코드의 중복 엔트리 처리 코드에서 엔트리를 '직접 지워버리는' .Remove() 콜을 지우고, 특정 플래그를 활성화시키는 것으로 변경한다.
-	 -> Filter base명령어에서 해당 플래그를 감지하고 기본적으로 검색에서 제외하는 기능을 추가한다.
-	*/
 }
 
 internal class AddCommand : AbstractCommand
@@ -176,6 +163,8 @@ internal class AddCommand : AbstractCommand
 			try
 			{
 				File.AppendAllText(appendTo, $"{srcPath}|{destPath}|{password}{Environment.NewLine}");
+				Console.WriteLine("Batch entry appended. Batch compressor will run when program exits normall with 'Exit' command. (If configured on configuration)");
+				Instance.BatchCompresingFiles.Add(appendTo);
 			}
 			catch (Exception ex)
 			{

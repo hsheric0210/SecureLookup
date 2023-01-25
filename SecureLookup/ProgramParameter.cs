@@ -23,7 +23,7 @@ public class ProgramParameter
 	public bool DisableLoop { get; set; }
 
 	[ParameterAlias("batch")]
-	[ParameterDescription("Execute each lines of specified file as command AND EXIT. Remember to append 'save' at the last line to save all changes.")]
+	[ParameterDescription("Execute each lines of specified file as command and exit.")]
 	public string? BatchFile { get; set; }
 
 	[ParameterAlias("export")]

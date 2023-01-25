@@ -5,7 +5,7 @@ public class DatabaseCreationParameter
 {
 	[ParameterAlias("phashalg")]
 	[ParameterDescription("Primary password hashing algorithm")]
-	public string PrimaryPasswordHashingAlgorithm { get; set; } = "PBKDF2-HMAC-SHA512";
+	public string PrimaryPasswordHashingAlgorithm { get; set; } = "Argon2id";
 
 	[ParameterAlias("phashprop")]
 	[ParameterDescription("Primary password hashing properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
@@ -25,7 +25,7 @@ public class DatabaseCreationParameter
 
 	[ParameterAlias("compressalg", "calg")]
 	[ParameterDescription("Database compression algorithm")]
-	public string DatabaseCompressionAlgorithm { get; set; } = "Deflate";
+	public string DatabaseCompressionAlgorithm { get; set; } = "PPMd";
 
 	[ParameterAlias("compressprop", "cprop")]
 	[ParameterDescription("Database compression properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
