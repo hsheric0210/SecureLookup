@@ -26,6 +26,11 @@ internal abstract class Pbkdf2BcPasswordHash : AbstractPasswordHash
 
 internal class Pbkdf2BcHmacSha3256PasswordHash : Pbkdf2BcPasswordHash
 {
+	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
+	{
+		[IterationsProp] = "5000000"
+	};
+
 	public Pbkdf2BcHmacSha3256PasswordHash() : base(() => new Sha3Digest(256))
 	{
 	}
@@ -33,6 +38,11 @@ internal class Pbkdf2BcHmacSha3256PasswordHash : Pbkdf2BcPasswordHash
 
 internal class Pbkdf2BcHmacSha3512PasswordHash : Pbkdf2BcPasswordHash
 {
+	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
+	{
+		[IterationsProp] = "3000000"
+	};
+
 	public Pbkdf2BcHmacSha3512PasswordHash() : base(() => new Sha3Digest(512))
 	{
 	}

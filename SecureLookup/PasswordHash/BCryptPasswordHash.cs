@@ -6,6 +6,10 @@ internal class BCryptPasswordHash : AbstractPasswordHash
 	protected const string CostProp = "cost";
 
 	public override int SaltSize => 16;
+	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
+	{
+		[CostProp] = "15"
+	};
 
 	public BCryptPasswordHash() : base("bcrypt")
 	{

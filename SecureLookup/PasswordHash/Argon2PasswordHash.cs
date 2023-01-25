@@ -8,6 +8,12 @@ internal abstract class Argon2PasswordHash : AbstractPasswordHash
 	protected const string ParallelismProp = "parallelism";
 
 	public override int SaltSize => 16;
+	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
+	{
+		[IterationsProp] = "64",
+		[MemorySizeProp] = "131072",
+		[ParallelismProp] = "10"
+	};
 
 	protected Argon2PasswordHash(string typeSuffix) : base("Argon2" + typeSuffix) { }
 

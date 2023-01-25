@@ -4,6 +4,7 @@ using SecureLookup.Hash;
 using SecureLookup.Parameter;
 using SecureLookup.PasswordHash;
 using System.Security.Cryptography;
+using ZstdNet;
 
 namespace SecureLookup.Db;
 public static class DatabaseCreator
@@ -43,9 +44,15 @@ public static class DatabaseCreator
 		return outer;
 	}
 
-	private static DbPasswordHashingEntry CreatePasswordHashing(string algorithmName, string props)
+	private static DbPasswordHashingEntry CreatePasswordHashing(string algorithmName, string? props)
 	{
 		AbstractPasswordHash hash = PasswordHashFactory.Lookup(algorithmName);
+		if (props is null)
+		{
+			props = hash.DefaultProperties is null ? "" : PropertiesUtils.Serialize(hash.DefaultProperties);
+			if (hash.DefaultProperties is not null)
+				Console.WriteLine("Using default password hashing properties: " + props);
+		}
 		if (!hash.IsPropertiesValid(PropertiesUtils.Deserialize(props)))
 			throw new ArgumentException("Invalid properties: " + props);
 		return new DbPasswordHashingEntry
@@ -63,7 +70,7 @@ public static class DatabaseCreator
 		{
 			props = compression.DefaultProperties is null ? "" : PropertiesUtils.Serialize(compression.DefaultProperties);
 			if (compression.DefaultProperties is not null)
-				Console.WriteLine("Using default properties: " + props);
+				Console.WriteLine("Using default compressor properties: " + props);
 		}
 		if (!compression.IsPropertiesValid(PropertiesUtils.Deserialize(props)))
 			throw new ArgumentException("Invalid properties: " + props);

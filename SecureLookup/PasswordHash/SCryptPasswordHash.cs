@@ -8,6 +8,12 @@ internal class SCryptPasswordHash : AbstractPasswordHash
 	protected const string ParallelizationFactorProp = "p";
 
 	public override int SaltSize => 16;
+	public override IReadOnlyDictionary<string, string> DefaultProperties => new Dictionary<string, string>()
+	{
+		[CostFactorProp] = "20",
+		[BlockSizeFactorProp] = "131072",
+		[ParallelizationFactorProp] = "10"
+	};
 
 	public SCryptPasswordHash() : base("scrypt")
 	{

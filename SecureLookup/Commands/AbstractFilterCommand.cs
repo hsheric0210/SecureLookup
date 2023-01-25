@@ -26,6 +26,10 @@ internal class FilterCommandParameter
 	[ParameterAlias("casesens", "cs")]
 	[ParameterDescription("Case sensitive search (Search is case insensitive by default, even regex)")]
 	public bool CaseSensitive { get; set; }
+
+	[ParameterAlias("backups", "baks")]
+	[ParameterDescription("Include overwritten archive backups when filtering")]
+	public bool IncludeBackups { get; set; }
 }
 
 internal abstract class AbstractFilterCommand : AbstractCommand
@@ -55,6 +59,9 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		{
 			return ExecuteForEntries(args, DbRoot.Entries.Where(entry =>
 			{
+				if (!param.IncludeBackups && ((DbEntryFlags)entry.Flags).HasFlag(DbEntryFlags.Backup))
+					return false;
+
 				if ((all || targetChar == 'n') && pred(entry.Name))
 					return true;
 				if ((all || targetChar == 'r') && pred(entry.OriginalFileName))
@@ -113,7 +120,7 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 		}
 		if (entry.Notes is not null && entry.Notes.Count > 0)
 		{
-			builder.AppendLine("Urls:");
+			builder.AppendLine("Notes:");
 			foreach (var notes in entry.Notes)
 				builder.Append("* ").AppendLine(notes);
 		}

@@ -7,16 +7,11 @@ public class DbInnerRoot
 {
 	[XmlArray("entries")]
 	[XmlArrayItem("entry")]
-	public HashSet<DbEntry> Entries { get; set; } = new HashSet<DbEntry>();
+	public List<DbEntry> Entries { get; set; } = new List<DbEntry>();
 
 	[XmlArray("generatedFileNames")]
 	[XmlArrayItem("fileName")]
 	public HashSet<string> GeneratedFileNames { get; set; } = new HashSet<string>();
-}
-
-public sealed class GeneratedFileName
-{
-
 }
 
 public sealed class DbEntry : IEquatable<DbEntry?>
@@ -40,6 +35,9 @@ public sealed class DbEntry : IEquatable<DbEntry?>
 	[XmlArray("notes", IsNullable = true)]
 	[XmlArrayItem("note")]
 	public List<string>? Notes { get; set; }
+
+	[XmlElement("flags")]
+	public int Flags { get; set; }
 
 	public override bool Equals(object? obj) => Equals(obj as DbEntry);
 	public bool Equals(DbEntry? other) => other is not null && string.Equals(Name, other.Name, StringComparison.OrdinalIgnoreCase);

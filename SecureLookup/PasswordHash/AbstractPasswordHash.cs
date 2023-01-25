@@ -3,6 +3,7 @@ public abstract class AbstractPasswordHash
 {
 	public string AlgorithmName { get; }
 	public abstract int SaltSize { get; }
+	public abstract IReadOnlyDictionary<string, string>? DefaultProperties { get; }
 
 	protected AbstractPasswordHash(string algorithmName) => AlgorithmName = algorithmName;
 

@@ -9,7 +9,7 @@ public class DatabaseCreationParameter
 
 	[ParameterAlias("phashprop")]
 	[ParameterDescription("Primary password hashing properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
-	public string PrimaryPasswordHashingProperties { get; set; } = "iterations=5000000";
+	public string? PrimaryPasswordHashingProperties { get; set; }
 
 	[ParameterAlias("phashsize")]
 	[ParameterDescription("Primary password hash length")]
@@ -21,7 +21,7 @@ public class DatabaseCreationParameter
 
 	[ParameterAlias("shashprop")]
 	[ParameterDescription("Secondary password hashing properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
-	public string SecondaryPasswordHashingProperties { get; set; } = "iterations=64;memorySizeKb=131072;parallelism=12";
+	public string? SecondaryPasswordHashingProperties { get; set; }
 
 	[ParameterAlias("compressalg", "calg")]
 	[ParameterDescription("Database compression algorithm")]
@@ -29,7 +29,7 @@ public class DatabaseCreationParameter
 
 	[ParameterAlias("compressprop", "cprop")]
 	[ParameterDescription("Database compression properties in '<key>=<value>;<key>=<value>;<key>=<value>...' format; For futher information, see README")]
-	public string? DatabaseCompressionProperties { get; set; } = "x=9";
+	public string? DatabaseCompressionProperties { get; set; }
 
 	[ParameterAlias("dhashalg")]
 	[ParameterDescription("Database hashing algorithm (for integrity check)")]
