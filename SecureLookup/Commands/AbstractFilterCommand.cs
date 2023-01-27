@@ -104,26 +104,4 @@ internal abstract class AbstractFilterCommand : AbstractCommand
 			_ => null
 		};
 	}
-
-	protected void AppendEntry(StringBuilder builder, DbEntry entry)
-	{
-		builder.AppendLine().AppendLine("***");
-		builder.Append("Name: ").AppendLine(entry.Name);
-		builder.Append("Original file name: ").AppendLine(entry.OriginalFileName);
-		builder.Append("Encrypted file name: ").AppendLine(entry.ArchiveFileName);
-		builder.Append("Password: ").AppendLine(entry.Password);
-		if (entry.Urls is not null && entry.Urls.Count > 0)
-		{
-			builder.AppendLine("Urls:");
-			foreach (var url in entry.Urls)
-				builder.Append("* ").AppendLine(url);
-		}
-		if (entry.Notes is not null && entry.Notes.Count > 0)
-		{
-			builder.AppendLine("Notes:");
-			foreach (var notes in entry.Notes)
-				builder.Append("* ").AppendLine(notes);
-		}
-		builder.AppendLine("***");
-	}
 }

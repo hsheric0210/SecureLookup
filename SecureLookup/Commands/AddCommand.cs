@@ -25,6 +25,10 @@ internal class AddCommandParameter
 	[ParameterDescription("Length of generated password")]
 	public int PasswordLength { get; set; } = 64;
 
+	[ParameterAlias("PassDictFile", "PSWDictFile", "PWDictFile", "PDictF")]
+	[ParameterDescription("The dictionary file to generate new password; You can use predefined dictionaries and Unicode dictionaries with file")]
+	public string? PasswordDictionaryFile { get; set; }
+
 	[ParameterAlias("PassDict", "PSWDict", "PWDict", "PDict")]
 	[ParameterDescription("Dictionary to generate new password; Predefined dictionary names are available at README")]
 	public string PasswordDictionary { get; set; } = "SpecialMixedAlphaNumeric";
@@ -36,6 +40,10 @@ internal class AddCommandParameter
 	[ParameterAlias("ANameLen", "ALen", "AL")]
 	[ParameterDescription("Length of generated archive file name")]
 	public int ArchiveNameLength { get; set; } = 64;
+
+	[ParameterAlias("ANameDictFile", "ANameDictFile", "ANameDictFile", "ADictF")]
+	[ParameterDescription("The dictionary file to generate new archive file name; You can use predefined dictionaries and Unicode dictionaries with file")]
+	public string? ArchiveNameDictionaryFile { get; set; }
 
 	[ParameterAlias("ANameDict", "ADict", "AD")]
 	[ParameterDescription("Dictionary of generated archive file name; Predefined dictionary names are available at README")]
@@ -106,7 +114,7 @@ internal class AddCommand : AbstractCommand
 
 		if (string.IsNullOrWhiteSpace(password))
 		{
-			password = RandomStringGenerator.RandomString(param.PasswordLength, param.PasswordDictionary);
+			password = GenerateString(param.PasswordLength, null, param.PasswordDictionary, param.PasswordDictionaryFile, false);
 			Console.WriteLine("Generated password: " + password);
 		}
 
@@ -142,7 +150,7 @@ internal class AddCommand : AbstractCommand
 		// check overwriting
 		DbEntry? previous = DropDuplicateNameEntry(name, dest, param);
 
-		var destName = (param.ReusePreviousName ? previous?.ArchiveFileName : null) ?? GenerateNewFileName(param.ArchiveNameLength, dest, param.ArchiveNameDictionary);
+		var destName = (param.ReusePreviousName ? previous?.ArchiveFileName : null) ?? GenerateString(param.ArchiveNameLength, dest, param.ArchiveNameDictionary, param.ArchiveNameDictionaryFile);
 		DbRoot.Entries.Add(new DbEntry()
 		{
 			Name = name,
@@ -178,18 +186,6 @@ internal class AddCommand : AbstractCommand
 			CallArchiver(srcPath, destPath, password, isFile);
 
 		return true;
-	}
-
-	private string GenerateNewFileName(int nameLength, string destFolder, string dict)
-	{
-		string newName;
-		do
-			newName = RandomStringGenerator.RandomString(nameLength, dict);
-		while (DbRoot.GeneratedFileNames.Contains(newName) || new FileInfo(Path.Combine(destFolder, newName)).Exists);
-
-		Console.WriteLine("New filename generated: " + newName);
-		DbRoot.GeneratedFileNames.Add(newName);
-		return newName;
 	}
 
 	private DbEntry? DropDuplicateNameEntry(string name, string dest, AddCommandParameter param)

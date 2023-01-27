@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text;
+using SecureLookup.Db;
 using SecureLookup.Parameter;
 
 namespace SecureLookup.Commands;
@@ -10,6 +12,9 @@ internal class CleanCommandParameter
 	[ParameterDescription("The folder where the archive files will be stored; if you want to treat cwd as repository, use '.'")]
 	[MandatoryParameter]
 	public string ArchiveRepository { get; set; } = "";
+
+	[ParameterDescription("Delete backup entries together")]
+	public bool IncludeBackups { get; set; } = false;
 }
 
 internal class CleanCommand : AbstractCommand
@@ -34,14 +39,33 @@ internal class CleanCommand : AbstractCommand
 			return false;
 		}
 
-		int genNameCount = DbRoot.GeneratedFileNames.Count;
-		DbRoot.GeneratedFileNames.Clear();
-		Console.WriteLine($"Deleted {genNameCount} generated names.");
+		var removedNames = DbRoot.GeneratedFileNames.RemoveWhere(name => !new FileInfo(Path.Combine(repo, name)).Exists);
+		Console.WriteLine($"Deleted {removedNames} generated names.");
 
 		var dangling = DbRoot.Entries.Where(entry => !new FileInfo(Path.Combine(repo, entry.ArchiveFileName)).Exists).ToList();
-		Console.WriteLine($"Removing total {dangling.Count} dangling entries.");
-		foreach (Db.DbEntry entry in dangling)
+		var builder = new StringBuilder();
+		builder.Append("Removing total ").Append(dangling.Count).AppendLine(" dangling entries.");
+		foreach (DbEntry entry in dangling)
+		{
+			entry.AppendEntry(builder);
 			DbRoot.Entries.Remove(entry);
+		}
+		builder.AppendLine();
+		Console.WriteLine(builder.ToString());
+
+		if (param.IncludeBackups)
+		{
+			var backups = DbRoot.Entries.Where(entry => ((DbEntryFlags)entry.Flags).HasFlag(DbEntryFlags.Backup)).ToList();
+			builder.Clear();
+			builder.Append("Removing total ").Append(backups.Count).AppendLine(" backup entries.");
+			foreach (DbEntry entry in backups)
+			{
+				entry.AppendEntry(builder);
+				DbRoot.Entries.Remove(entry);
+			}
+			builder.AppendLine();
+			Console.WriteLine(builder.ToString());
+		}
 
 		Instance.Database.MarkDirty();
 		return true;

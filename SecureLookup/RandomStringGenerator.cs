@@ -18,8 +18,11 @@ internal static class RandomStringGenerator
 		var dictionary = GetDictionary(dictionaryName);
 		var builder = new StringBuilder(length);
 		for (var i = 0; i < length; i++)
-			builder.Append(dictionary[RandomNumberGenerator.GetInt32(dictionary.Length)]);
-		return builder.ToString();
+		{
+			var app = dictionary[RandomNumberGenerator.GetInt32(dictionary.Length)];
+			builder.Append(app);
+		}
+		return builder.ToString().Trim();
 	}
 
 	private static string GetDictionary(string dictionaryName)

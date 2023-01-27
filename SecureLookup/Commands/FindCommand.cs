@@ -15,7 +15,7 @@ internal class FindCommand : AbstractFilterCommand
 		var builder = new StringBuilder();
 		builder.Append("*** Total ").Append(entries.Count).AppendLine(" entries found.");
 		foreach (DbEntry entry in entries)
-			AppendEntry(builder, entry);
+			entry.AppendEntry(builder);
 		Console.WriteLine(builder.ToString());
 		return true;
 	}

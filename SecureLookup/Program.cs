@@ -286,7 +286,18 @@ public class Program
 	{
 		AbstractCommand? cmd = CommandFactory.FindCommand(cmdString);
 		if (cmd is not null)
-			cmd.TryExecute(args);
+		{
+			try
+			{
+				cmd.TryExecute(args);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Exception thrown during command execution!");
+				Console.WriteLine(ex);
+			}
+
+		}
 		else
 			Console.WriteLine($"Command '{cmdString}' not found.");
 	}

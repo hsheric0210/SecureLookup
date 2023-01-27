@@ -34,6 +34,10 @@ internal class EditCommandParameter
 	[ParameterAlias("NoteSep")]
 	[ParameterDescription("Note separator char to separate notes in '-Notes' parameter")]
 	public string NoteSeparator { get; set; } = ";";
+
+	[ParameterAlias("ay", "y")]
+	[ParameterDescription("Assume yes to all user input prompts")]
+	public bool AssumeAllYes { get; set; }
 }
 
 internal class EditCommand : AbstractFilterCommand
@@ -77,7 +81,7 @@ internal class EditCommand : AbstractFilterCommand
 			}
 			else
 			{
-				if (!ConsoleUtils.CheckContinue("Multiple entries are selected."))
+				if (!param.AssumeAllYes && !ConsoleUtils.CheckContinue("Multiple entries are selected."))
 					return true;
 			}
 		}
@@ -88,7 +92,7 @@ internal class EditCommand : AbstractFilterCommand
 			builder.AppendLine().AppendLine("***");
 			ChangeString(builder, "Name", () => entry.Name, value => entry.Name = value, param.Name);
 			ChangeString(builder, "Original file/folder name", () => entry.OriginalFileName, value => entry.OriginalFileName = value, param.OriginalFileName);
-			ChangeString(builder, "Encrypted archive name", () => entry.OriginalFileName, value => entry.OriginalFileName = value, param.OriginalFileName);
+			ChangeString(builder, "Encrypted archive name", () => entry.ArchiveFileName, value => entry.ArchiveFileName = value, param.ArchiveFileName);
 			ChangeString(builder, "Password", () => entry.Password, value => entry.Password = value, param.Password);
 
 			Change<List<string>?>(builder, "Urls", () => entry.Urls, value => entry.Urls = value, param.Urls?.Split(param.UrlSeparator).ToList(), toString: value => value is null ? null : string.Join(param.UrlSeparator, value));

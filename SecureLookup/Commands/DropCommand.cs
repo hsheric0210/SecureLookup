@@ -6,9 +6,9 @@ namespace SecureLookup.Commands;
 
 internal class DropCommandParameter
 {
-	[ParameterAlias("dump", "dmp")]
-	[ParameterDescription("Prints the data of dropped entries")]
-	public bool? Print { get; set; }
+	[ParameterAlias("ay", "y")]
+	[ParameterDescription("Assume yes to all user input prompts")]
+	public bool AssumeAllYes { get; set; }
 }
 
 internal class DropCommand : AbstractFilterCommand
@@ -23,17 +23,18 @@ internal class DropCommand : AbstractFilterCommand
 
 	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
+		if (!ParameterDeserializer.TryParse(out OpenCommandParameter param, args))
+			return false;
+
 		Console.WriteLine($"*** Total {entries.Count} entries selected.");
-		if (entries.Count > 1 && !ConsoleUtils.CheckContinue("Multiple entries are selected."))
-		{
+		if (!param.AssumeAllYes && entries.Count > 1 && !ConsoleUtils.CheckContinue("Multiple entries are selected."))
 			return true;
-		}
 
 		var builder = new StringBuilder();
 		Instance.Database.MarkDirty();
 		foreach (DbEntry entry in entries)
 		{
-			AppendEntry(builder, entry);
+			entry.AppendEntry(builder);
 			DbRoot.Entries.Remove(entry);
 		}
 		Console.WriteLine(builder.ToString());
