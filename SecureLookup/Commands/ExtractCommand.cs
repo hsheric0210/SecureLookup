@@ -68,64 +68,73 @@ internal class ExtractCommand : AbstractFilterCommand
 
 		var builder = new StringBuilder();
 		Console.WriteLine($"*** Total {entries.Count} entries selected.");
-		if (assumeYes && entries.Count > 1)
+		if (!assumeYes && entries.Count > 1)
 		{
 			if (!ConsoleUtils.CheckContinue("Multiple entries are selected."))
 				return true;
 		}
+		Console.WriteLine("Parallelism is " + param.Parallelism);
 
 		var taskQueue = new List<Task>();
+		var funcQueue = new List<Action>();
 
-		foreach (DbEntry entry in entries)
+		using var sync = new SemaphoreSlim(param.Parallelism);
+		var mainTask = Task.Run(() =>
 		{
-			var archive = Path.Combine(repo, entry.ArchiveFileName);
-			if (!new FileInfo(archive).Exists)
+			foreach (DbEntry entry in entries)
 			{
-				Console.WriteLine("Archive not exists: " + archive);
-				continue;
-			}
-
-			var target = Path.Combine(dest, entry.OriginalFileName);
-			if (!assumeYes && new FileInfo(target).Exists)
-			{
-				Console.WriteLine("Following file will be overwritten: " + target);
-				if (!ConsoleUtils.CheckContinue())
-					return true;
-			}
-
-			Console.WriteLine("Archive name: " + entry.Name);
-			Console.WriteLine("Archive file-name: " + entry.ArchiveFileName);
-			Console.WriteLine("Archive password: " + entry.Password);
-
-			var sync = new SemaphoreSlim(param.Parallelism);
-			taskQueue.Add(Task.Run(async () =>
-			{
-				try
+				var archive = Path.Combine(repo, entry.ArchiveFileName);
+				if (!new FileInfo(archive).Exists)
 				{
-					await sync.WaitAsync();
-					var process = new Process();
-					process.StartInfo.FileName = Instance.Config.UnarchiverExecutable;
-					process.StartInfo.Arguments = Instance.Config.UnarchiverParameter.FormatToken(new
+					Console.WriteLine("Archive not exists: " + archive);
+					continue;
+				}
+
+				var target = Path.Combine(dest, entry.OriginalFileName);
+				if (!assumeYes && new FileInfo(target).Exists)
+				{
+					Console.WriteLine("Following file will be overwritten: " + target);
+					if (!ConsoleUtils.CheckContinue())
+						break;
+				}
+
+				Console.WriteLine("Archive name: " + entry.Name);
+				Console.WriteLine("Archive file-name: " + entry.ArchiveFileName);
+				Console.WriteLine("Archive password: " + entry.Password);
+
+				sync.Wait();
+				taskQueue.Add(Task.Run(async () =>
+				{
+					try
 					{
-						Target = target,
-						Archive = archive,
-						entry.Password
-					});
-					Console.WriteLine("Extracting with Executable: " + process.StartInfo.FileName);
-					Console.WriteLine("Extracting with Parameter: " + process.StartInfo.Arguments);
-					process.StartInfo.WorkingDirectory = repo;
-					process.StartInfo.UseShellExecute = true;
-					process.Start();
-					await process.WaitForExitAsync();
-				}
-				finally
-				{
-					sync.Release();
-				}
-			}));
-		}
+						var process = new Process();
+						process.StartInfo.FileName = Instance.Config.UnarchiverExecutable;
+						process.StartInfo.Arguments = Instance.Config.UnarchiverParameter.FormatToken(new
+						{
+							Target = target,
+							Archive = archive,
+							entry.Password
+						});
+						Console.WriteLine("Extracting with Executable: " + process.StartInfo.FileName);
+						Console.WriteLine("Extracting with Parameter: " + process.StartInfo.Arguments);
+						process.StartInfo.WorkingDirectory = repo;
+						process.StartInfo.UseShellExecute = true;
+						process.Start();
+						await process.WaitForExitAsync();
+					}
+					finally
+					{
+						sync.Release();
+					}
+				}));
+			}
+		});
+
 		if (!param.NonBlocking)
+		{
+			mainTask.Wait();
 			Task.WhenAll(taskQueue).Wait();
+		}
 
 		return true;
 	}
