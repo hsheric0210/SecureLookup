@@ -24,9 +24,9 @@ internal class OpenCommandParameter
 	[ParameterDescription("Override the parallel execution limitation of unarchivers")]
 	public int Parallelism { get; set; } = 8;
 
-	[ParameterAlias("Block", "bl")]
-	[ParameterDescription("Block command execution until all unarchiving is finished")]
-	public bool BlockExecution { get; set; }
+	[ParameterAlias("Async")]
+	[ParameterDescription("Don't wait until all unarchiving task is finished; You shouldn't enable this parameter on Batch Files")]
+	public bool NonBlocking { get; set; }
 }
 
 internal class ExtractCommand : AbstractFilterCommand
@@ -111,6 +111,8 @@ internal class ExtractCommand : AbstractFilterCommand
 						Archive = archive,
 						entry.Password
 					});
+					Console.WriteLine("Extracting with Executable: " + process.StartInfo.FileName);
+					Console.WriteLine("Extracting with Parameter: " + process.StartInfo.Arguments);
 					process.StartInfo.WorkingDirectory = repo;
 					process.StartInfo.UseShellExecute = true;
 					process.Start();
@@ -122,7 +124,7 @@ internal class ExtractCommand : AbstractFilterCommand
 				}
 			}));
 		}
-		if (param.BlockExecution)
+		if (!param.NonBlocking)
 			Task.WhenAll(taskQueue).Wait();
 
 		return true;

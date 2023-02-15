@@ -170,6 +170,7 @@ internal class AddCommand : AbstractCommand
 		{
 			try
 			{
+				appendTo = Path.GetFullPath(appendTo);
 				File.AppendAllText(appendTo, $"{srcPath}|{destPath}|{password}{Environment.NewLine}");
 				Console.WriteLine("Batch entry appended. Batch compressor will run when program exits normall with 'Exit' command. (If configured on configuration)");
 				Instance.BatchCompresingFiles.Add(appendTo);

@@ -243,6 +243,7 @@ public class Program
 					{
 						try
 						{
+							Console.WriteLine("Batch archiver call: " + batch);
 							var proc = new Process();
 							proc.StartInfo.FileName = Config.BatchArchiverExecutable;
 							proc.StartInfo.Arguments = Config.BatchArchiverParameter.FormatToken(new { BatchFile = batch });
