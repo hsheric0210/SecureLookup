@@ -157,6 +157,8 @@ internal class AddCommand : AbstractCommand
 			OriginalFileName = srcFileName, // Path is relative to database path
 			ArchiveFileName = destName,
 			Password = password,
+			Created = previous?.Created ?? DateTime.Now,
+			LastModified = DateTime.Now,
 			Urls = param.Urls?.Split(param.UrlSeparator).ToList() ?? previous?.Urls,
 			Notes = param.Notes?.Split(param.NoteSeparator).ToList() ?? previous?.Notes?.Where(x => !x.StartsWith(BackupDatePrefix))?.ToList()
 		});

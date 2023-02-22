@@ -23,7 +23,7 @@ internal class DropCommand : AbstractFilterCommand
 
 	protected override bool ExecuteForEntries(string[] args, IList<DbEntry> entries)
 	{
-		if (!ParameterDeserializer.TryParse(out OpenCommandParameter param, args))
+		if (!ParameterDeserializer.TryParse(out DropCommandParameter param, args))
 			return false;
 
 		Console.WriteLine($"*** Total {entries.Count} entries selected.");

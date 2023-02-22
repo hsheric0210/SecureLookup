@@ -36,6 +36,12 @@ public sealed class DbEntry : IEquatable<DbEntry?>
 	[XmlArrayItem("note")]
 	public List<string>? Notes { get; set; }
 
+	[XmlElement("lastModifiedDate")]
+	public DateTime? LastModified { get; set; }
+
+	[XmlElement("createdDate")]
+	public DateTime? Created { get; set; }
+
 	[XmlElement("flags")]
 	public int Flags { get; set; }
 
