@@ -10,6 +10,8 @@ public static class DbEntryExtension
 		builder.Append("Original file name: ").AppendLine(entry.OriginalFileName);
 		builder.Append("Encrypted file name: ").AppendLine(entry.ArchiveFileName);
 		builder.Append("Password: ").AppendLine(entry.Password);
+		builder.Append("Last modified date: ").AppendLine(entry.LastModified?.ToString("yyyy-MM-dd HH:mm:ss.ffff"));
+		builder.Append("Created date: ").AppendLine(entry.Created?.ToString("yyyy-MM-dd HH:mm:ss.ffff"));
 		if (entry.Urls is not null && entry.Urls.Count > 0)
 		{
 			builder.AppendLine("Urls:");
